@@ -35,11 +35,3 @@ Package listings are claims from their publishers, not proof of compatibility, q
 
 - Tesseract documentation and Apache-2.0 license statement: https://tesseract-ocr.github.io/tessdoc/Installation.html
 - Adobe-hosted PDF standards/reference material: https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/
-
-## On-device form intelligence
-
-- `lib_llama_cpp` package/runtime support: https://pub.dev/packages/lib_llama_cpp
-- SmolLM2-135M official model card, limitations, and Apache-2.0 license: https://huggingface.co/HuggingFaceTB/SmolLM2-135M
-- Pinned Q4_K_M GGUF conversion used by QPdf: https://huggingface.co/QuantFactory/SmolLM2-135M-Instruct-GGUF/tree/476854d00ede130660aba430d15f9347ad2e7d0e
-- SmolLM2-360M-Instruct model card evaluated and rejected in Phase C3: https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct
-- Pinned 360M Q4_K_M evaluation artifact (not shipped): https://huggingface.co/QuantFactory/SmolLM2-360M-Instruct-GGUF/tree/42821b2066379bb5a70951029cc79ac1be0b809d

@@ -45,7 +45,7 @@ Performance targets and the large-document benchmark are documented in [docs/PER
 
 ## Recommended product promise
 
-> Open, read, annotate, organize, Smart Fill, sign, redact, scan, and export PDFs on all your devices. Your documents stay on your device unless you choose to share or sync them.
+> Open, read, annotate, organize, fill, sign, redact, scan, and export PDFs on all your devices. Your documents stay on your device unless you choose to share or sync them.
 
 ## Proposed delivery sequence
 

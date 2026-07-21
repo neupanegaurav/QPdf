@@ -7,11 +7,6 @@
 - Generate and verify the 120-document compatibility corpus.
 - Run the independent forensic redaction gate and the partial-image object-hash
   regression test.
-- Run the native and scanned flat-form detector fixtures, the no-OCR refusal
-  test, and the complete Smart Fill widget flow.
-- Run the Smart Fill semantic privacy/schema adversarial suite. On eligible
-  Apple devices, test every Foundation Models availability state and compare
-  generated grouping across supported languages and current OS model versions.
 - Run image-heavy rendering and the 1,000-page structural benchmark.
 - Build JavaScript and WebAssembly web releases.
 - Build and upload Android debug APK and unsigned release AAB, unsigned iOS

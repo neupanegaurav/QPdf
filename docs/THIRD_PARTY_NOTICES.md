@@ -13,8 +13,6 @@ The principal direct dependencies are:
 | dart_pdf_editor, pdf_document, pdf_cos | PDF editor, renderer, and object model | Apache-2.0 |
 | pdf_manipulator / pdf_oxide | Password protection, optimization, metadata scrubbing, and PDF/A conversion | MIT / MIT or Apache-2.0 |
 | pdf_ocr_ondevice and its packaged model workflow | Private on-device OCR | Apache-2.0 |
-| lib_llama_cpp / llama.cpp | Private native GGUF inference | MIT |
-| SmolLM2-135M-Instruct | Optional portable Smart Fill model | Apache-2.0 |
 | cunning_document_scanner | Android/iOS document scanning | MIT |
 | printing | Platform printing and sharing | Apache-2.0 |
 | file_picker | Native file selection | MIT |
@@ -24,6 +22,6 @@ The principal direct dependencies are:
 
 Before each store submission, regenerate the dependency graph with
 `flutter pub deps`, inspect every bundled `LICENSE` file, and update this table
-if a dependency or license changes. The OCR and portable Smart Fill model URLs,
-byte counts, and checksums must remain pinned, and their upstream notices must
-be retained with distributed or downloaded models.
+if a dependency or license changes. The OCR model URL, byte count, and checksum
+must remain pinned, and its upstream notices must be retained with the
+distributed or downloaded model.

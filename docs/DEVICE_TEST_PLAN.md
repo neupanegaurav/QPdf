@@ -8,19 +8,15 @@ during beta testing.
 
 1. Install the signed debug APK with `adb install -r app-debug.apk`.
 2. Launch QPdf and verify Home, Quick actions, and Recent documents.
-3. Choose **Fill & Sign**, open the form, enter text, toggle a check box, add a
-   handwritten signature, Save As, close, and reopen in another viewer.
-4. Open `QPdf-Smart-Fill-Flat-Test.pdf`, choose **Smart Fill**, review the eight
-   native flat-field detections, create them, populate values, and Save As.
-5. Open `QPdf-Smart-Fill-Scanned-Test.pdf` and choose **Smart Fill**. Confirm
-   QPdf offers **Run OCR**, complete the private OCR step, choose **Smart Fill**
-   again, review the raster detections, populate them, and Save As.
-6. Mark text and part of an image for redaction. Confirm Save is blocked until
+3. Choose **Fill & Sign**, open the form, enter text via **Fill form fields**,
+   toggle a check box, use **Type on page** to place free text on a flat area,
+   add a handwritten signature, Save As, close, and reopen in another viewer.
+4. Mark text and part of an image for redaction. Confirm Save is blocked until
    **Apply Securely**, review the image-only warning, apply, Save As, and verify
    the covered content is not searchable or selectable in another viewer.
-7. Share a PDF into QPdf while it is closed, then repeat while it is running.
-8. Scan two pages, reorder them, run OCR, search the recognized text, and save.
-9. Rotate the tablet, use split-screen, print/share, force-stop during an edit,
+5. Share a PDF into QPdf while it is closed, then repeat while it is running.
+6. Scan two pages, reorder them, run OCR, search the recognized text, and save.
+7. Rotate the tablet, use split-screen, print/share, force-stop during an edit,
    relaunch, and restore recovery data.
 
 ## iPhone and iPad
