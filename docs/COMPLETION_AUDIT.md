@@ -97,3 +97,21 @@ public store release gate has passed.
 
 Use `docs/DEVICE_TEST_PLAN.md` for hands-on steps and
 `tool/verify_release_artifacts.sh` before transferring any build.
+
+## Post-audit release-configuration hardening (2026-07-21)
+
+These fixes close release-only gaps that debug-build device testing could not
+observe. They still require a fresh release-build acceptance pass.
+
+- Android: `INTERNET` and `CAMERA` are now declared in the `main` manifest, not
+  only the debug/profile manifests. Prior release AABs could not download the
+  OCR or Smart Fill models and could not grant camera access for scanning; the
+  passing device test used the debug APK, which masked this.
+- macOS: the sandboxed release entitlements now grant user-selected file
+  read-write, outgoing `network.client`, and `print`. Previously a sandboxed
+  release build could launch but could not open/save picked files, download
+  models, or print.
+- Mobile save: `savePdf` no longer overwrites the `file_picker` cache copy on
+  Android/iOS (a silent no-op against the user's real document). Those
+  platforms now export through the system save sheet; in-place atomic overwrite
+  is restricted to desktop, where the picked path is the user's real file.

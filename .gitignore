@@ -10,3 +10,6 @@ apps/openpdf_studio/android/key.properties
 .playwright-cli/
 **/.dart_tool/
 **/build/
+
+# macOS Finder metadata
+.DS_Store

@@ -1,4 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Applies to every build type, including release. The debug/profile
+         manifests declare INTERNET only for Flutter tooling; without it here a
+         released build cannot download the pinned OCR and Smart Fill models. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Camera is used only for on-device document scanning (scan to PDF).
+         cunning_document_scanner requests the runtime grant when the user
+         starts a scan; QPdf never accesses the camera otherwise. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false"/>
     <application
         android:label="QPdf"
         android:name="${applicationName}"

@@ -7,6 +7,7 @@ import 'package:pdf_domain/pdf_domain.dart';
 import 'images_to_pdf_service.dart';
 import 'read_picked_file_bytes.dart';
 import 'read_local_pdf.dart';
+import 'supports_in_place_save.dart';
 import 'write_pdf_atomically.dart';
 
 abstract interface class DocumentFileService {
@@ -109,7 +110,12 @@ final class PlatformDocumentFileService implements DocumentFileService {
     Uint8List? expectedSourceBytes,
   }) async {
     final path = source.localPath;
-    if (path != null &&
+    // In-place overwrite is only correct where the picked path is the user's
+    // real file (desktop). On Android/iOS the path is a throwaway cache copy,
+    // so writing there would report success while the user's document stays
+    // untouched — those platforms export through the system save sheet.
+    if (supportsInPlacePickedSave &&
+        path != null &&
         await writePdfAtomically(
           path,
           bytes,

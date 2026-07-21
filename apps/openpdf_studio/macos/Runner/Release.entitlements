@@ -4,5 +4,16 @@
 <dict>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
+	<!-- Open and save the PDFs the user picks. Without this a sandboxed
+	     release build silently fails every open/save of a chosen file. -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<!-- Outgoing connections only, used to download the pinned OCR and Smart
+	     Fill models. The sandbox blocks all network access otherwise. -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- Desktop printing of the open document. -->
+	<key>com.apple.security.print</key>
+	<true/>
 </dict>
 </plist>
