@@ -1,0 +1,5 @@
+dist/*.apk filter=lfs diff=lfs merge=lfs -text
+dist/*.aab filter=lfs diff=lfs merge=lfs -text
+dist/*.ipa filter=lfs diff=lfs merge=lfs -text
+dist/*.zip filter=lfs diff=lfs merge=lfs -text
+apps/openpdf_studio/web/pdf_manipulator/*.wasm filter=lfs diff=lfs merge=lfs -text

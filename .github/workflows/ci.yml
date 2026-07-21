@@ -1,0 +1,158 @@
+name: QPdf CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: 3.44.2
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install corpus dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          python -m pip install pillow==11.3.0 pypdf==6.0.0 reportlab==4.4.3
+      - name: Generate deterministic fixtures
+        run: |
+          python tool/generate_pdf_corpus.py
+          python tool/generate_image_heavy_fixture.py
+      - name: Analyze and test domain package
+        working-directory: packages/pdf_domain
+        run: dart pub get && dart analyze && dart test
+      - name: Analyze and test engine contract
+        working-directory: packages/pdf_engine_api
+        run: dart pub get && dart analyze && dart test
+      - name: Analyze and test optional PDFium adapter
+        working-directory: packages/pdf_engine_pdfium
+        run: flutter pub get && flutter analyze && flutter test
+      - name: Analyze and test app
+        working-directory: apps/openpdf_studio
+        run: flutter pub get && flutter analyze && flutter test
+      - name: Verify pure-Dart corpus
+        working-directory: apps/openpdf_studio
+        run: dart run tool/verify_dart_engine_corpus.dart
+      - name: Verify irreversible redaction independently
+        run: ./tool/verify_redaction_forensics.sh
+      - name: Run 1,000-page benchmark
+        working-directory: apps/openpdf_studio
+        run: dart run tool/benchmark_large_document.dart 1000
+      - name: Build web and check WebAssembly compatibility
+        working-directory: apps/openpdf_studio
+        run: |
+          flutter build web --release
+          flutter build web --wasm --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qpdf-web-wasm-release
+          path: apps/openpdf_studio/build/web
+          if-no-files-found: error
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Build Android test APK
+        working-directory: apps/openpdf_studio
+        run: |
+          flutter pub get
+          flutter build apk --debug
+          flutter build appbundle --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qpdf-android-debug
+          path: apps/openpdf_studio/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qpdf-android-unsigned-release-aab
+          path: apps/openpdf_studio/build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+  apple:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Build unsigned iOS release app
+        working-directory: apps/openpdf_studio
+        run: flutter pub get && flutter build ios --release --no-codesign
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qpdf-ios-unsigned-release
+          path: apps/openpdf_studio/build/ios/iphoneos/Runner.app
+          if-no-files-found: error
+      - name: Build macOS release app
+        working-directory: apps/openpdf_studio
+        run: flutter build macos --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qpdf-macos-release
+          path: apps/openpdf_studio/build/macos/Build/Products/Release/QPdf.app
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Build Windows release app
+        working-directory: apps/openpdf_studio
+        run: flutter pub get && flutter build windows --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qpdf-windows-release
+          path: apps/openpdf_studio/build/windows/x64/runner/Release
+          if-no-files-found: error
+
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux build dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsecret-1-dev
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Build Linux release app
+        working-directory: apps/openpdf_studio
+        run: flutter pub get && flutter build linux --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qpdf-linux-release
+          path: apps/openpdf_studio/build/linux/x64/release/bundle
+          if-no-files-found: error

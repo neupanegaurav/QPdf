@@ -1,0 +1,12 @@
+tmp/
+test_corpus/generated/
+apps/openpdf_studio/android/key.properties
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+
+# Local tooling and generated build state
+.playwright-cli/
+**/.dart_tool/
+**/build/
