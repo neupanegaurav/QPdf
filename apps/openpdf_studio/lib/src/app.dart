@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:pdf_domain/pdf_domain.dart';
 import 'package:pdf_engine_api/pdf_engine_api.dart';
 
+import '../l10n/app_localizations.dart';
 import 'editor/editor_home.dart';
 import 'services/document_file_service.dart';
 import 'services/document_recovery_service.dart';
@@ -73,9 +73,10 @@ class _QPdfAppState extends State<QPdfApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'QPdf',
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      supportedLocales: const [Locale('en')],
+      onGenerateTitle: (context) =>
+          AppLocalizations.of(context)?.appTitle ?? 'QPdf',
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: buildLightTheme(),
       darkTheme: buildDarkTheme(),
       themeMode: ThemeMode.system,

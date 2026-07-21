@@ -80,6 +80,10 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
 
+  # Generate the typed AppLocalizations class from lib/l10n/*.arb (see
+  # l10n.yaml). Enables device-language resolution for built-in and app text.
+  generate: true
+
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

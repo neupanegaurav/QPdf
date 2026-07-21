@@ -1,5 +1,4 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -10,8 +9,16 @@ final class PdfImageInput {
   final Uint8List bytes;
 }
 
+/// Builds a single PDF containing one page per image.
+///
+/// The image decode and PDF encode run on a background isolate so a large
+/// scan or import never blocks the UI thread.
 Future<Uint8List> createPdfFromImages(List<PdfImageInput> images) async {
   if (images.isEmpty) throw ArgumentError.value(images, 'images', 'is empty');
+  return compute(_buildInBackground, images);
+}
+
+Future<Uint8List> _buildInBackground(List<PdfImageInput> images) async {
   final document = pw.Document(
     title: 'QPdf image document',
     author: 'QPdf',

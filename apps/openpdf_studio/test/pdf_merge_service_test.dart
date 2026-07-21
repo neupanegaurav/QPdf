@@ -4,8 +4,8 @@ import 'package:pdf_document/pdf_document.dart';
 import 'package:pdf_domain/pdf_domain.dart';
 
 void main() {
-  test('merges every page in source order', () {
-    final merged = mergePdfSources([
+  test('merges every page in source order', () async {
+    final merged = await mergePdfSources([
       _source('first', 2),
       _source('second', 3),
       _source('third', 1),
@@ -14,7 +14,7 @@ void main() {
   });
 
   test('requires at least two source PDFs', () {
-    expect(() => mergePdfSources([_source('one', 1)]), throwsArgumentError);
+    expect(mergePdfSources([_source('one', 1)]), throwsArgumentError);
   });
 }
 

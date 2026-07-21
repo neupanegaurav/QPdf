@@ -1,0 +1,39 @@
+{
+  "@@locale": "en",
+  "appTitle": "QPdf",
+  "@appTitle": {
+    "description": "Application name shown in the OS task switcher and title bar."
+  },
+  "actionOpen": "Open PDF",
+  "@actionOpen": {
+    "description": "Primary action to open a PDF from storage."
+  },
+  "actionSave": "Save",
+  "@actionSave": {
+    "description": "Save the current document."
+  },
+  "actionSaveCopy": "Save a copy",
+  "@actionSaveCopy": {
+    "description": "Export the current document to a new file."
+  },
+  "actionFillAndSign": "Fill & Sign",
+  "@actionFillAndSign": {
+    "description": "Enter the fill-and-sign workflow."
+  },
+  "actionMergePdfs": "Merge PDFs",
+  "@actionMergePdfs": {
+    "description": "Combine several PDFs into one."
+  },
+  "actionImagesToPdf": "Images to PDF",
+  "@actionImagesToPdf": {
+    "description": "Create a PDF from selected images."
+  },
+  "actionScan": "Scan document",
+  "@actionScan": {
+    "description": "Capture pages with the camera."
+  },
+  "recentDocuments": "Recent documents",
+  "@recentDocuments": {
+    "description": "Heading for the recently opened documents list."
+  }
+}

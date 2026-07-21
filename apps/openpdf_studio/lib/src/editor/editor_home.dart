@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dart_pdf_editor/dart_pdf_editor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pdf_domain/pdf_domain.dart';
 import 'package:pdf_engine_api/pdf_engine_api.dart';
 import 'package:pdf_document/pdf_document.dart';
@@ -216,7 +217,7 @@ class _EditorHomeState extends State<EditorHome> {
       if (sources.length < 2) {
         throw StateError('Select at least two PDF files to merge.');
       }
-      final bytes = mergePdfSources(sources);
+      final bytes = await mergePdfSources(sources);
       final source = PdfDocumentSource(
         id: 'merge-${DateTime.now().microsecondsSinceEpoch}',
         displayName: 'Merged.pdf',
@@ -2831,12 +2832,60 @@ class _EditorHomeState extends State<EditorHome> {
     }
   }
 
+  void _openShortcut() {
+    if (_busy) return;
+    unawaited(_openDocument());
+  }
+
+  void _saveShortcut() {
+    final editing = _editingController;
+    if (_busy || _document == null || editing == null) return;
+    unawaited(_save(editing.bytes));
+  }
+
+  void _saveAsShortcut() {
+    final editing = _editingController;
+    if (_busy || _document == null || editing == null) return;
+    unawaited(_saveAs(editing.bytes));
+  }
+
+  void _printShortcut() {
+    final editing = _editingController;
+    if (_busy || _document == null || editing == null) return;
+    unawaited(_printDocument(editing.bytes));
+  }
+
+  /// Desktop accelerators. Each action is bound under both Control (Windows and
+  /// Linux) and Meta/Command (macOS). Modifier combinations never carry text,
+  /// so a focused text field still receives normal typing.
+  Map<ShortcutActivator, VoidCallback> _buildShortcutBindings() {
+    final bindings = <ShortcutActivator, VoidCallback>{};
+    void bind(
+      LogicalKeyboardKey key,
+      VoidCallback action, {
+      bool shift = false,
+    }) {
+      bindings[SingleActivator(key, control: true, shift: shift)] = action;
+      bindings[SingleActivator(key, meta: true, shift: shift)] = action;
+    }
+
+    bind(LogicalKeyboardKey.keyO, _openShortcut);
+    bind(LogicalKeyboardKey.keyS, _saveShortcut);
+    bind(LogicalKeyboardKey.keyS, _saveAsShortcut, shift: true);
+    bind(LogicalKeyboardKey.keyP, _printShortcut);
+    return bindings;
+  }
+
   @override
   Widget build(BuildContext context) {
     final document = _document;
-    return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 20,
+    return CallbackShortcuts(
+      bindings: _buildShortcutBindings(),
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          appBar: AppBar(
+            titleSpacing: 20,
         title: Row(
           children: [
             const Icon(Icons.picture_as_pdf_outlined),
@@ -3150,6 +3199,8 @@ class _EditorHomeState extends State<EditorHome> {
               ),
             ),
         ],
+          ),
+        ),
       ),
     );
   }

@@ -1,0 +1,12 @@
+{
+  "@@locale": "es",
+  "appTitle": "QPdf",
+  "actionOpen": "Abrir PDF",
+  "actionSave": "Guardar",
+  "actionSaveCopy": "Guardar una copia",
+  "actionFillAndSign": "Rellenar y firmar",
+  "actionMergePdfs": "Combinar PDF",
+  "actionImagesToPdf": "Imágenes a PDF",
+  "actionScan": "Escanear documento",
+  "recentDocuments": "Documentos recientes"
+}
