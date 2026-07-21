@@ -1,0 +1,83 @@
+name: pdf_manipulator
+version: 2.1.4
+description: >-
+  Cross-platform PDF toolkit for Flutter. Merge, split, render, extract,
+  search, sign, encrypt, convert, build from scratch. Rust engine, off
+  the main thread.
+homepage: https://github.com/whuppi/pdf_manipulator
+repository: https://github.com/whuppi/pdf_manipulator
+issue_tracker: https://github.com/whuppi/pdf_manipulator/issues
+
+topics:
+  - pdf
+  - ffi
+  - wasm
+  - document
+  - encryption
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+
+hooks:
+  build: true
+
+dependencies:
+  # Build hook — native asset compilation protocol
+  code_assets: ^1.2.0
+  hooks: ^2.0.2
+
+  # Build hook — SHA256 verification of downloaded pre-built binaries
+  crypto: ^3.0.6
+
+  # Native FFI bridge (native platforms only)
+  ffi: ^2.1.0
+
+  # Build hook — package root resolution
+  package_config: '>=2.1.0 <4.0.0'
+
+  # Build hook — path manipulation
+  path: ^1.9.0
+
+  # Build hook + Rust engine logging
+  logging: ^1.3.0
+
+  # Annotations (e.g. @internal)
+  meta: ^1.16.0
+
+  # Web transport — JS interop via dart:js_interop types
+  web: ^1.1.0
+
+# Deliberate fake key material the pub.dev secret scanner would flag:
+# the example app's demo signing cert, and the WASM JS glue's doc
+# comments quoting the PEM markers `sign` expects. test/ never ships
+# (.pubignore), so its fixture certs need no entry.
+false_secrets:
+  - /vendor/office_oxide/**
+  - /vendor/pdf_oxide/**
+  - /example/lib/main.dart
+  - /web_assets/pdf_oxide.js
+
+dev_dependencies:
+  # Fixture generator — the INDEPENDENT PDF producer (dart-pdf). Test
+  # fixtures must never be built by this package's own builder
+  # (self-feeding masks mirrored reader/writer bugs). Dev-only: ships
+  # nowhere.
+  pdf: ^3.12.0
+
+  # Test runner
+  test: ^1.31.1
+
+  # PNG decode for render-output pixel assertions (the image-stamp
+  # transparency test reads pixels out of doc.render()'s PNG frames).
+  # Pure Dart — runs on VM and browser. Dev-only: ships nowhere.
+  image: ^4.0.0
+
+  # Lint rules
+  lints: ^6.1.0
+
+  # Web test asset server (serves lane_worker.js + wasm to browser tests)
+  shelf: ^1.4.2
+  shelf_static: ^1.1.3
+
+  # Hybrid isolate communication for web test asset server
+  stream_channel: ^2.1.4
