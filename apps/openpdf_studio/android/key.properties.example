@@ -1,0 +1,4 @@
+storePassword=replace-with-secret
+keyPassword=replace-with-secret
+keyAlias=qpdf-upload
+storeFile=/absolute/path/to/qpdf-upload-keystore.jks
