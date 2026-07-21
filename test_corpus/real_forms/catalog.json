@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "retrievedAt": "2026-07-21",
+  "policy": "Download-only acceptance inputs. Do not package these agency forms with QPdf or imply agency endorsement.",
+  "forms": [
+    {
+      "id": "irs-w9",
+      "category": "tax",
+      "agency": "United States Internal Revenue Service",
+      "title": "Form W-9",
+      "sourcePage": "https://www.irs.gov/forms-pubs/about-form-w-9",
+      "downloadUrl": "https://www.irs.gov/pub/irs-pdf/fw9.pdf",
+      "file": "irs-w9.pdf",
+      "sha256": "2d420cbb4123dcf1fb82595b2359cfbb5d81f00b9df9d359fcc7af361d093f53"
+    },
+    {
+      "id": "uscis-i9",
+      "category": "employment",
+      "agency": "United States Citizenship and Immigration Services",
+      "title": "Form I-9 Employment Eligibility Verification",
+      "sourcePage": "https://www.uscis.gov/i-9",
+      "downloadUrl": "https://www.uscis.gov/sites/default/files/document/forms/i-9.pdf",
+      "file": "uscis-i9.pdf",
+      "sha256": "780f348c34df694bb0b4dbbfaf9f22b99b9757b80d16a37ba89aadf069597281"
+    },
+    {
+      "id": "va-10-5345",
+      "category": "health authorization",
+      "agency": "United States Department of Veterans Affairs",
+      "title": "VA Form 10-5345",
+      "sourcePage": "https://www.va.gov/forms/10-5345/",
+      "downloadUrl": "https://www.va.gov/vaforms/medical/pdf/VA_Form_10-5345_Fillable.pdf",
+      "file": "va-10-5345.pdf",
+      "sha256": "13deec40105411ac865f606373c0de8322aad397b016df406e0b2161e6eb96ef"
+    }
+  ]
+}

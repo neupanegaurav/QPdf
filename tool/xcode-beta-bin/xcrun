@@ -1,0 +1,41 @@
+#!/bin/sh
+# Keep native-asset hooks on the same Xcode selected by the outer build. Some
+# Xcode build phases do not preserve DEVELOPER_DIR, while Dart native hooks call
+# `xcrun` again to locate the SDK.
+if [ -d /Applications/Xcode.app/Contents/Developer ]; then
+  export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+elif [ -d /Applications/Xcode-beta.app/Contents/Developer ]; then
+  export DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer
+fi
+
+# Xcode 27 beta's dsymutil can hang indefinitely on Flutter AOT and Dart native
+# asset binaries. Device-test profile builds do not consume symbol bundles, so
+# an explicitly opted-in local build may create the expected bundle shape and
+# continue. CI and production archives never set this flag and therefore retain
+# real dSYM generation.
+if [ "${QPDF_ALLOW_MISSING_DSYM:-0}" = "1" ] && [ "${1:-}" = "dsymutil" ]; then
+  shift
+  output=""
+  input=""
+  while [ "$#" -gt 0 ]; do
+    if [ "$1" = "-o" ] && [ "$#" -gt 1 ]; then
+      output="$2"
+      shift 2
+    else
+      input="$1"
+      shift
+    fi
+  done
+  if [ -z "$output" ] || [ -z "$input" ]; then
+    echo "QPdf xcrun wrapper: unable to parse dsymutil arguments" >&2
+    exit 64
+  fi
+  dwarf_name=$(basename "$input")
+  mkdir -p "$output/Contents/Resources/DWARF"
+  # The Flutter build subsequently runs lipo across this path, so it must be a
+  # valid Mach-O input even though it is not a real symbol file.
+  cp "$input" "$output/Contents/Resources/DWARF/$dwarf_name"
+  exit 0
+fi
+
+exec /usr/bin/xcrun "$@"

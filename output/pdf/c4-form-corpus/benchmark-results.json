@@ -1,0 +1,13 @@
+{
+  "forms": 10,
+  "fields": 83,
+  "exactMetadataMatches": 83,
+  "metadataAccuracy": 1.0,
+  "saveReopenPassed": true,
+  "radioSaveReopenPassed": true,
+  "repeatedSaveReopenPassed": true,
+  "unicodeLabelsPassed": true,
+  "filledFixture": "/Volumes/1tbMacSSD/GauravStudios/Documents/PDFeditor/apps/openpdf_studio/../../output/pdf/c4-form-corpus/verified-filled-identity.pdf",
+  "filledRadioFixture": "/Volumes/1tbMacSSD/GauravStudios/Documents/PDFeditor/apps/openpdf_studio/../../output/pdf/c4-form-corpus/verified-filled-dependents.pdf",
+  "filledHouseholdFixture": "/Volumes/1tbMacSSD/GauravStudios/Documents/PDFeditor/apps/openpdf_studio/../../output/pdf/c4-form-corpus/verified-filled-household.pdf"
+}

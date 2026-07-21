@@ -1,0 +1,143 @@
+{
+  "generatedAt": "2026-07-20T23:33:56.629017Z",
+  "policy": "Download-only acceptance inputs. Do not package these agency forms with QPdf or imply agency endorsement.",
+  "allChecksumsMatch": true,
+  "allDocumentsOpen": true,
+  "forms": [
+    {
+      "id": "irs-w9",
+      "category": "tax",
+      "agency": "United States Internal Revenue Service",
+      "title": "Form W-9",
+      "sourcePage": "https://www.irs.gov/forms-pubs/about-form-w-9",
+      "downloadUrl": "https://www.irs.gov/pub/irs-pdf/fw9.pdf",
+      "available": true,
+      "sha256": "2d420cbb4123dcf1fb82595b2359cfbb5d81f00b9df9d359fcc7af361d093f53",
+      "checksumMatches": true,
+      "bytes": 140815,
+      "pages": 6,
+      "xfa": true,
+      "compatibility": "partial",
+      "formFields": 23,
+      "fillableQuestions": 23,
+      "genericLabels": 23,
+      "recoveredCoordinateLabels": 21,
+      "remainingGenericLabels": 2,
+      "reviewableLabelCoverage": 0.9130434782608695,
+      "recoveredLabelExamples": [
+        {
+          "fieldName": "topmostSubform[0].Page1[0].f1_01[0]",
+          "label": "Name of entity/individual",
+          "confidence": 0.9500000000000001
+        },
+        {
+          "fieldName": "topmostSubform[0].Page1[0].f1_02[0]",
+          "label": "Business name/disregarded entity name, if different from above",
+          "confidence": 0.9500000000000001
+        },
+        {
+          "fieldName": "topmostSubform[0].Page1[0].Boxes3a-b_ReadOrder[0].c1_1[0]",
+          "label": "Individual/sole proprietor",
+          "confidence": 0.95
+        },
+        {
+          "fieldName": "topmostSubform[0].Page1[0].Boxes3a-b_ReadOrder[0].c1_1[1]",
+          "label": "C corporation",
+          "confidence": 0.95
+        },
+        {
+          "fieldName": "topmostSubform[0].Page1[0].Boxes3a-b_ReadOrder[0].c1_1[2]",
+          "label": "S corporation",
+          "confidence": 0.95
+        },
+        {
+          "fieldName": "topmostSubform[0].Page1[0].Boxes3a-b_ReadOrder[0].c1_1[3]",
+          "label": "Partnership",
+          "confidence": 0.95
+        },
+        {
+          "fieldName": "topmostSubform[0].Page1[0].Boxes3a-b_ReadOrder[0].c1_1[4]",
+          "label": "Trust/estate",
+          "confidence": 0.95
+        },
+        {
+          "fieldName": "topmostSubform[0].Page1[0].Boxes3a-b_ReadOrder[0].c1_1[5]",
+          "label": "LLC",
+          "confidence": 0.8999999999999999
+        }
+      ],
+      "semanticLabelCoverage": 0.0,
+      "missingWidgetLocations": 0,
+      "fieldTypes": {
+        "text": 15,
+        "checkBox": 8
+      },
+      "saveReopenField": "topmostSubform[0].Page1[0].f1_01[0]",
+      "saveReopenPassed": true,
+      "verificationOutput": "verified-filled-irs-w9.pdf"
+    },
+    {
+      "id": "uscis-i9",
+      "category": "employment",
+      "agency": "United States Citizenship and Immigration Services",
+      "title": "Form I-9 Employment Eligibility Verification",
+      "sourcePage": "https://www.uscis.gov/i-9",
+      "downloadUrl": "https://www.uscis.gov/sites/default/files/document/forms/i-9.pdf",
+      "available": true,
+      "sha256": "780f348c34df694bb0b4dbbfaf9f22b99b9757b80d16a37ba89aadf069597281",
+      "checksumMatches": true,
+      "bytes": 524095,
+      "pages": 4,
+      "xfa": false,
+      "compatibility": "full",
+      "formFields": 128,
+      "fillableQuestions": 128,
+      "genericLabels": 0,
+      "recoveredCoordinateLabels": 0,
+      "remainingGenericLabels": 0,
+      "reviewableLabelCoverage": 1.0,
+      "recoveredLabelExamples": [],
+      "semanticLabelCoverage": 1.0,
+      "missingWidgetLocations": 0,
+      "fieldTypes": {
+        "text": 115,
+        "comboBox": 5,
+        "checkBox": 8
+      },
+      "saveReopenField": "3 A lawful permanent resident Enter USCIS or ANumber",
+      "saveReopenPassed": true,
+      "verificationOutput": "verified-filled-uscis-i9.pdf"
+    },
+    {
+      "id": "va-10-5345",
+      "category": "health authorization",
+      "agency": "United States Department of Veterans Affairs",
+      "title": "VA Form 10-5345",
+      "sourcePage": "https://www.va.gov/forms/10-5345/",
+      "downloadUrl": "https://www.va.gov/vaforms/medical/pdf/VA_Form_10-5345_Fillable.pdf",
+      "available": true,
+      "sha256": "13deec40105411ac865f606373c0de8322aad397b016df406e0b2161e6eb96ef",
+      "checksumMatches": true,
+      "bytes": 861890,
+      "pages": 2,
+      "xfa": true,
+      "compatibility": "partial",
+      "formFields": 61,
+      "fillableQuestions": 57,
+      "genericLabels": 0,
+      "recoveredCoordinateLabels": 0,
+      "remainingGenericLabels": 0,
+      "reviewableLabelCoverage": 1.0,
+      "recoveredLabelExamples": [],
+      "semanticLabelCoverage": 1.0,
+      "missingWidgetLocations": 0,
+      "fieldTypes": {
+        "text": 32,
+        "checkBox": 29
+      },
+      "saveReopenField": "form1[0].#subform[0].NameAddress1[0]",
+      "saveReopenPassed": true,
+      "verificationOutput": "verified-filled-va-10-5345.pdf"
+    }
+  ]
+}
