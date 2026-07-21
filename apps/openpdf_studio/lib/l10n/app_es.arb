@@ -1,12 +1,19 @@
 {
   "@@locale": "es",
   "appTitle": "QPdf",
-  "actionOpen": "Abrir PDF",
-  "actionSave": "Guardar",
-  "actionSaveCopy": "Guardar una copia",
+  "homeTitle": "Inicio",
+  "homePrompt": "¿Qué te gustaría hacer?",
+  "recentDocuments": "Documentos recientes",
+  "actionBrowse": "Examinar",
+  "privacyFooter": "Tus documentos se quedan contigo: privados y en el dispositivo.",
   "actionFillAndSign": "Rellenar y firmar",
-  "actionMergePdfs": "Combinar PDF",
-  "actionImagesToPdf": "Imágenes a PDF",
-  "actionScan": "Escanear documento",
-  "recentDocuments": "Documentos recientes"
+  "fillAndSignSubtitle": "Completa formularios y añade tu firma",
+  "actionOpen": "Abrir PDF",
+  "openSubtitle": "Ver y editar",
+  "actionScanShort": "Escanear",
+  "scanSubtitle": "Usa tu cámara",
+  "photosTitle": "Fotos",
+  "photosSubtitle": "Crear un PDF",
+  "combineTitle": "Combinar",
+  "actionMergePdfs": "Combinar PDF"
 }

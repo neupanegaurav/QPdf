@@ -4,36 +4,64 @@
   "@appTitle": {
     "description": "Application name shown in the OS task switcher and title bar."
   },
-  "actionOpen": "Open PDF",
-  "@actionOpen": {
-    "description": "Primary action to open a PDF from storage."
+  "homeTitle": "Home",
+  "@homeTitle": {
+    "description": "Heading of the Home dashboard."
   },
-  "actionSave": "Save",
-  "@actionSave": {
-    "description": "Save the current document."
-  },
-  "actionSaveCopy": "Save a copy",
-  "@actionSaveCopy": {
-    "description": "Export the current document to a new file."
-  },
-  "actionFillAndSign": "Fill & Sign",
-  "@actionFillAndSign": {
-    "description": "Enter the fill-and-sign workflow."
-  },
-  "actionMergePdfs": "Merge PDFs",
-  "@actionMergePdfs": {
-    "description": "Combine several PDFs into one."
-  },
-  "actionImagesToPdf": "Images to PDF",
-  "@actionImagesToPdf": {
-    "description": "Create a PDF from selected images."
-  },
-  "actionScan": "Scan document",
-  "@actionScan": {
-    "description": "Capture pages with the camera."
+  "homePrompt": "What would you like to do?",
+  "@homePrompt": {
+    "description": "Subheading under the Home title."
   },
   "recentDocuments": "Recent documents",
   "@recentDocuments": {
     "description": "Heading for the recently opened documents list."
+  },
+  "actionBrowse": "Browse",
+  "@actionBrowse": {
+    "description": "Button that opens the file picker from the recent-documents row."
+  },
+  "privacyFooter": "Your documents stay with you — private and on-device.",
+  "@privacyFooter": {
+    "description": "Privacy reassurance shown at the bottom of Home."
+  },
+  "actionFillAndSign": "Fill & Sign",
+  "@actionFillAndSign": {
+    "description": "Primary Home action: fill forms and sign."
+  },
+  "fillAndSignSubtitle": "Complete forms and add your signature",
+  "@fillAndSignSubtitle": {
+    "description": "Subtitle of the Fill & Sign card."
+  },
+  "actionOpen": "Open PDF",
+  "@actionOpen": {
+    "description": "Home action: open a PDF from storage."
+  },
+  "openSubtitle": "View and edit",
+  "@openSubtitle": {
+    "description": "Subtitle of the Open PDF card."
+  },
+  "actionScanShort": "Scan",
+  "@actionScanShort": {
+    "description": "Home action: scan pages with the camera."
+  },
+  "scanSubtitle": "Use your camera",
+  "@scanSubtitle": {
+    "description": "Subtitle of the Scan card."
+  },
+  "photosTitle": "Photos",
+  "@photosTitle": {
+    "description": "Home action: build a PDF from photos/images."
+  },
+  "photosSubtitle": "Create a PDF",
+  "@photosSubtitle": {
+    "description": "Subtitle of the Photos card."
+  },
+  "combineTitle": "Combine",
+  "@combineTitle": {
+    "description": "Home action: merge multiple PDFs."
+  },
+  "actionMergePdfs": "Merge PDFs",
+  "@actionMergePdfs": {
+    "description": "Subtitle of the Combine card."
   }
 }

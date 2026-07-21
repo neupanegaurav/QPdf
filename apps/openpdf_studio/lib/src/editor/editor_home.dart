@@ -9,6 +9,7 @@ import 'package:pdf_engine_api/pdf_engine_api.dart';
 import 'package:pdf_document/pdf_document.dart';
 import 'package:printing/printing.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../services/document_file_service.dart';
 import '../services/document_recovery_service.dart';
 import '../services/document_scanner_service.dart';
@@ -3257,6 +3258,7 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     return LayoutBuilder(
       builder: (context, constraints) {
         final horizontalPadding = constraints.maxWidth >= 900 ? 48.0 : 20.0;
@@ -3278,7 +3280,7 @@ class _EmptyState extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Home',
+                          l10n.homeTitle,
                           style: Theme.of(context).textTheme.headlineLarge
                               ?.copyWith(
                                 fontWeight: FontWeight.w700,
@@ -3287,7 +3289,7 @@ class _EmptyState extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'What would you like to do?',
+                          l10n.homePrompt,
                           style: Theme.of(context).textTheme.bodyLarge
                               ?.copyWith(color: colors.onSurfaceVariant),
                         ),
@@ -3304,7 +3306,7 @@ class _EmptyState extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                'Recent documents',
+                                l10n.recentDocuments,
                                 style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(
                                       fontWeight: FontWeight.w600,
@@ -3314,7 +3316,7 @@ class _EmptyState extends StatelessWidget {
                             ),
                             TextButton(
                               onPressed: onOpen,
-                              child: const Text('Browse'),
+                              child: Text(l10n.actionBrowse),
                             ),
                           ],
                         ),
@@ -3394,7 +3396,7 @@ class _EmptyState extends StatelessWidget {
                             const SizedBox(width: 7),
                             Flexible(
                               child: Text(
-                                'Your documents stay with you — private and on-device.',
+                                l10n.privacyFooter,
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(color: colors.onSurfaceVariant),
@@ -3446,6 +3448,7 @@ class _QuickActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
+      final l10n = AppLocalizations.of(context)!;
       final phone = constraints.maxWidth < 600;
       final compactWidth = phone
           ? (constraints.maxWidth - 12) / 2
@@ -3462,8 +3465,8 @@ class _QuickActions extends StatelessWidget {
             width: featureWidth,
             height: phone ? 164 : 176,
             icon: Icons.draw_outlined,
-            title: 'Fill & Sign',
-            subtitle: 'Complete forms and add your signature',
+            title: l10n.actionFillAndSign,
+            subtitle: l10n.fillAndSignSubtitle,
             primary: true,
             onTap: onFillAndSign,
           ),
@@ -3471,8 +3474,8 @@ class _QuickActions extends StatelessWidget {
             key: const Key('empty-open-pdf-button'),
             width: compactWidth,
             icon: Icons.folder_open_outlined,
-            title: 'Open PDF',
-            subtitle: 'View and edit',
+            title: l10n.actionOpen,
+            subtitle: l10n.openSubtitle,
             onTap: onOpen,
           ),
           if (isDocumentScannerSupported)
@@ -3480,24 +3483,24 @@ class _QuickActions extends StatelessWidget {
               key: const Key('scan-document-button'),
               width: compactWidth,
               icon: Icons.document_scanner_outlined,
-              title: 'Scan',
-              subtitle: 'Use your camera',
+              title: l10n.actionScanShort,
+              subtitle: l10n.scanSubtitle,
               onTap: onScanDocument,
             ),
           _HomeActionCard(
             key: const Key('create-from-images-button'),
             width: compactWidth,
             icon: Icons.photo_library_outlined,
-            title: 'Photos',
-            subtitle: 'Create a PDF',
+            title: l10n.photosTitle,
+            subtitle: l10n.photosSubtitle,
             onTap: onCreateFromImages,
           ),
           _HomeActionCard(
             key: const Key('merge-pdfs-button'),
             width: compactWidth,
             icon: Icons.call_merge_outlined,
-            title: 'Combine',
-            subtitle: 'Merge PDFs',
+            title: l10n.combineTitle,
+            subtitle: l10n.actionMergePdfs,
             onTap: onMergePdfs,
           ),
         ],

@@ -104,53 +104,95 @@ abstract class AppLocalizations {
   /// **'QPdf'**
   String get appTitle;
 
-  /// Primary action to open a PDF from storage.
+  /// Heading of the Home dashboard.
   ///
   /// In en, this message translates to:
-  /// **'Open PDF'**
-  String get actionOpen;
+  /// **'Home'**
+  String get homeTitle;
 
-  /// Save the current document.
+  /// Subheading under the Home title.
   ///
   /// In en, this message translates to:
-  /// **'Save'**
-  String get actionSave;
-
-  /// Export the current document to a new file.
-  ///
-  /// In en, this message translates to:
-  /// **'Save a copy'**
-  String get actionSaveCopy;
-
-  /// Enter the fill-and-sign workflow.
-  ///
-  /// In en, this message translates to:
-  /// **'Fill & Sign'**
-  String get actionFillAndSign;
-
-  /// Combine several PDFs into one.
-  ///
-  /// In en, this message translates to:
-  /// **'Merge PDFs'**
-  String get actionMergePdfs;
-
-  /// Create a PDF from selected images.
-  ///
-  /// In en, this message translates to:
-  /// **'Images to PDF'**
-  String get actionImagesToPdf;
-
-  /// Capture pages with the camera.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan document'**
-  String get actionScan;
+  /// **'What would you like to do?'**
+  String get homePrompt;
 
   /// Heading for the recently opened documents list.
   ///
   /// In en, this message translates to:
   /// **'Recent documents'**
   String get recentDocuments;
+
+  /// Button that opens the file picker from the recent-documents row.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse'**
+  String get actionBrowse;
+
+  /// Privacy reassurance shown at the bottom of Home.
+  ///
+  /// In en, this message translates to:
+  /// **'Your documents stay with you — private and on-device.'**
+  String get privacyFooter;
+
+  /// Primary Home action: fill forms and sign.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill & Sign'**
+  String get actionFillAndSign;
+
+  /// Subtitle of the Fill & Sign card.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete forms and add your signature'**
+  String get fillAndSignSubtitle;
+
+  /// Home action: open a PDF from storage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open PDF'**
+  String get actionOpen;
+
+  /// Subtitle of the Open PDF card.
+  ///
+  /// In en, this message translates to:
+  /// **'View and edit'**
+  String get openSubtitle;
+
+  /// Home action: scan pages with the camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan'**
+  String get actionScanShort;
+
+  /// Subtitle of the Scan card.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your camera'**
+  String get scanSubtitle;
+
+  /// Home action: build a PDF from photos/images.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get photosTitle;
+
+  /// Subtitle of the Photos card.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a PDF'**
+  String get photosSubtitle;
+
+  /// Home action: merge multiple PDFs.
+  ///
+  /// In en, this message translates to:
+  /// **'Combine'**
+  String get combineTitle;
+
+  /// Subtitle of the Combine card.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge PDFs'**
+  String get actionMergePdfs;
 }
 
 class _AppLocalizationsDelegate

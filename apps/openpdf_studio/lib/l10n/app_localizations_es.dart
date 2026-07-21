@@ -12,26 +12,48 @@ class AppLocalizationsEs extends AppLocalizations {
   String get appTitle => 'QPdf';
 
   @override
-  String get actionOpen => 'Abrir PDF';
+  String get homeTitle => 'Inicio';
 
   @override
-  String get actionSave => 'Guardar';
+  String get homePrompt => '¿Qué te gustaría hacer?';
 
   @override
-  String get actionSaveCopy => 'Guardar una copia';
+  String get recentDocuments => 'Documentos recientes';
+
+  @override
+  String get actionBrowse => 'Examinar';
+
+  @override
+  String get privacyFooter =>
+      'Tus documentos se quedan contigo: privados y en el dispositivo.';
 
   @override
   String get actionFillAndSign => 'Rellenar y firmar';
 
   @override
+  String get fillAndSignSubtitle => 'Completa formularios y añade tu firma';
+
+  @override
+  String get actionOpen => 'Abrir PDF';
+
+  @override
+  String get openSubtitle => 'Ver y editar';
+
+  @override
+  String get actionScanShort => 'Escanear';
+
+  @override
+  String get scanSubtitle => 'Usa tu cámara';
+
+  @override
+  String get photosTitle => 'Fotos';
+
+  @override
+  String get photosSubtitle => 'Crear un PDF';
+
+  @override
+  String get combineTitle => 'Combinar';
+
+  @override
   String get actionMergePdfs => 'Combinar PDF';
-
-  @override
-  String get actionImagesToPdf => 'Imágenes a PDF';
-
-  @override
-  String get actionScan => 'Escanear documento';
-
-  @override
-  String get recentDocuments => 'Documentos recientes';
 }
