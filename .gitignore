@@ -6,6 +6,15 @@ apps/openpdf_studio/android/key.properties
 *.p12
 *.mobileprovision
 
+# Publishing credentials — live secrets, must never be committed.
+*.p8
+AuthKey_*.p8
+**/*service-account*.json
+**/play-service-account.json
+**/secrets/
+docs/playstore-tools/*.json
+docs/playstore-tools/*.p8
+
 # Local tooling and generated build state
 .playwright-cli/
 **/.dart_tool/
