@@ -16,6 +16,8 @@ browser and the account owner's login; nothing in an API can do them.
 | Signed release AAB | Done — `CN=Gaurav Neupane`, SHA-256 `64:5C:D8:52:0F:A6:96:09:1D:2E:F0:61:B1:96:BF:A1:17:2F:CE:4B:8A:2E:75:D3:9C:B1:95:53:B8:9A:4D:37` |
 | Apple Bundle ID `studio.gaurav.qpdf` | Done — registered 2026-07-22, ASC id `X56L8H43B8`, platform UNIVERSAL |
 | iOS/macOS export-compliance + privacy plist keys | Done — see §6 |
+| Android 16 KB page-size compliance | Done — see §6; gate is `tool/verify_16kb_alignment.sh` |
+| Screenshots (Android phone + tablet) | Started — 4 captured in `store/screenshots/`, see §7 |
 | **Play Console app record** | **YOU** — §3 |
 | **Play: first AAB upload (browser only)** | **YOU** — §3 |
 | **Play: grant `claude-play-publisher@nearu-play-publisher.iam.gserviceaccount.com`** | **YOU** — §3 |
@@ -38,14 +40,16 @@ The AAB on disk is 168 MB. That is **not** what users download.
 
 | Piece | Size |
 | --- | --- |
-| AAB file on disk | 167.5 MB |
-| … of which debug symbols + ProGuard map | 85.1 MB (stripped by Play, never shipped) |
-| **Actual arm64-v8a download** | **31.4 MB** |
-| On-device install footprint | 72.2 MB |
+| AAB file on disk | 186.0 MB |
+| … of which debug symbols + ProGuard map | 94.3 MB (stripped by Play, never shipped) |
+| **Actual arm64-v8a download** | **32.6 MB** |
+| On-device install footprint | 75.4 MB |
 
 Play's per-download limit is 200 MB, so there is a wide margin. The biggest
 shipped library is `libpdf_oxide.so` at 12.9 MB compressed — that is the PDF
-engine itself, not an optional extra.
+engine itself, not an optional extra. The download grew by 1.2 MB when the
+16 KB fix in §6 swapped in the official ONNX Runtime build, which is slightly
+larger than the plugin's trimmed one.
 
 ---
 
@@ -124,6 +128,25 @@ that request.
 
 ## 6. Platform config fixed for this submission
 
+- Android 16 KB page size — this one would have been an outright Play rejection.
+  Since 1 November 2025, Play refuses apps targeting Android 15 or later whose
+  native libraries are laid out for 4 KB memory pages. QPdf targets API 36, and
+  the `onnxruntime` plugin's prebuilt `libonnxruntime.so` was 4 KB aligned. The
+  app's Gradle build now discards that copy and takes
+  `com.microsoft.onnxruntime:onnxruntime-android:1.20.0`, which is 16 KB
+  aligned on every ABI, and excludes the unused Java bridge
+  `libonnxruntime4j_jni.so`, which is still 4 KB aligned.
+
+  Verified two ways: `tool/verify_16kb_alignment.sh` reports every shipped
+  library at 16 KB or better (and correctly fails the pre-fix artifact), and the
+  release APK was run on the `sdk_gphone16k_arm64` 16 KB emulator, where the
+  system page-size warning is gone, a form PDF opens and renders, and a full
+  on-device OCR pass completes — so ONNX Runtime 1.20 works with the plugin's
+  OrtApi 14 FFI bindings.
+
+  Ordinary device testing cannot catch this. A 4 KB-page phone runs the old
+  build perfectly; only a 16 KB device or the upload itself shows the problem.
+
 - `ios/Runner/Info.plist`
   - `ITSAppUsesNonExemptEncryption = false` — QPdf uses only standard exempt
     cryptography (HTTPS plus the platform's hash/signature algorithms). Without
@@ -159,9 +182,22 @@ manifest, macOS release entitlements granted user-selected file read-write,
 | iPad 13" | 2064 × 2752 | App Store |
 
 `apps/openpdf_studio/assets/branding/qpdf-icon-master.png` is the icon source.
-Screenshots need the app running: an Android emulator or the Samsung SM-T860
-that already passed device testing is the quickest route — open a sample PDF and
-capture Home, the page view, Fill & Sign, page organiser, and redaction.
+
+Four real captures from the release build on the 16 KB emulator are already in
+`store/screenshots/`:
+
+- `android-phone/01-home.png` — 1080 × 2400, Home dashboard
+- `android-phone/02-document-view.png` — 1080 × 2400, form PDF open
+- `android-tablet/01-document-view.png` — 1800 × 2560, page panel + tool ribbon
+- `android-tablet/02-document-tools.png` — 1800 × 2560, full document-tools menu
+
+All four meet Play's phone and tablet specs. Worth adding before launch, since
+they show the features the listing sells: Fill & Sign on a real form, the page
+organiser, secure redaction, and the OCR progress state. They need a
+better-looking sample document than the synthetic test-corpus fixture used here.
+The feature graphic and the iOS/iPad sets still have to be produced — Apple
+rejects screenshots that show Android UI, so those must come from a simulator or
+device once an iOS build exists.
 
 ---
 

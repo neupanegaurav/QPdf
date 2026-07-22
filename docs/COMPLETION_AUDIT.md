@@ -75,3 +75,30 @@ observe. They still require a fresh release-build acceptance pass.
   Android/iOS (a silent no-op against the user's real document). Those
   platforms now export through the system save sheet; in-place atomic overwrite
   is restricted to desktop, where the picked path is the user's real file.
+
+## Store-submission blockers closed (2026-07-22)
+
+- Android 16 KB page size. Google Play rejects apps targeting Android 15 or
+  later when a shipped `.so` has LOAD segments aligned below 16 KB. The
+  `onnxruntime` plugin's prebuilt `libonnxruntime.so` was 4 KB aligned, so the
+  release bundle would have been refused at upload. The app's Gradle build now
+  drops that copy and takes `com.microsoft.onnxruntime:onnxruntime-android`
+  1.20.0, which is 16 KB aligned for every ABI, and excludes its unused Java
+  JNI bridge (`libonnxruntime4j_jni.so`, still 4 KB aligned). Every shipped
+  library now passes; `tool/verify_16kb_alignment.sh` is the gate.
+  Verified on the `sdk_gphone16k_arm64` 16 KB emulator: the release APK no
+  longer raises the system page-size warning, opens a form PDF, and completes a
+  full on-device OCR pass, so ONNX Runtime 1.20 works with the plugin's
+  OrtApi 14 bindings.
+- iOS `ITSAppUsesNonExemptEncryption` was absent, which stalls every App Store
+  Connect upload on the manual export-compliance question.
+- iOS `NSPhotoLibraryUsageDescription` / `NSPhotoLibraryAddUsageDescription`
+  were absent while the scanner links `DKImagePickerController`, which uses the
+  Photos framework. That is a review rejection, or a crash when the picker opens.
+- macOS lacked `LSApplicationCategoryType`, required by the Mac App Store, and
+  had no `CFBundleDocumentTypes` entry, so it could not be offered as a PDF
+  handler.
+
+Measured Android download size after the fix: 32.6 MB for an arm64-v8a device
+(75.4 MB installed). The 186 MB bundle on disk is mostly debug symbols that
+Play strips and never ships.

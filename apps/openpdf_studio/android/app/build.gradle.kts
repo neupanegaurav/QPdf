@@ -54,6 +54,16 @@ android {
             signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
+
+    packaging {
+        jniLibs {
+            // onnxruntime-android also carries the JNI bridge for its Java API,
+            // which QPdf never calls: the Dart plugin binds libonnxruntime.so
+            // through FFI. That bridge is still built for 4 KB pages, so
+            // shipping it would fail Google Play's 16 KB page-size check.
+            excludes += "**/libonnxruntime4j_jni.so"
+        }
+    }
 }
 
 kotlin {

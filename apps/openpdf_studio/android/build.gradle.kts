@@ -28,6 +28,23 @@ subprojects {
             compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
         }
     }
+    // Google Play requires 16 KB page-size support for apps targeting Android
+    // 15 and above. The onnxruntime plugin ships a prebuilt libonnxruntime.so
+    // whose LOAD segments are 4 KB aligned, so an upload containing it is
+    // rejected. Drop that copy and take the officially published
+    // onnxruntime-android AAR, which is 16 KB aligned for every ABI. The C API
+    // stays backward compatible, and the plugin asks for OrtApi version 14.
+    if (name == "onnxruntime") {
+        pluginManager.withPlugin("com.android.library") {
+            extensions.configure<com.android.build.gradle.LibraryExtension> {
+                sourceSets.getByName("main").jniLibs.setSrcDirs(emptyList<String>())
+            }
+            dependencies.add(
+                "implementation",
+                "com.microsoft.onnxruntime:onnxruntime-android:1.20.0",
+            )
+        }
+    }
     afterEvaluate {
         if (plugins.hasPlugin("com.android.library")) {
             extensions.configure<com.android.build.gradle.LibraryExtension> {
