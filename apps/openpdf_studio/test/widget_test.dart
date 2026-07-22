@@ -139,45 +139,22 @@ void main() {
     await tester.tap(find.byKey(const Key('fill-and-sign-toolbar-button')));
     await tester.pumpAndSettle();
     expect(find.text('Smart Fill'), findsNothing);
-    expect(find.text('Fill form fields'), findsOneWidget);
+    expect(find.text('Fill form fields'), findsNothing);
     expect(find.text('Type on page'), findsOneWidget);
     expect(find.text('Add handwritten signature'), findsOneWidget);
     expect(find.text('Add digital signature'), findsOneWidget);
 
-    await tester.tap(find.text('Fill form fields'));
+    // Type on page arms free text, which reads no AcroForm and so behaves
+    // identically on tagged, flattened, and scanned documents.
+    await tester.tap(find.text('Type on page'));
     await tester.pumpAndSettle();
-    expect(find.text('Form fields'), findsOneWidget);
-    expect(find.text('Applicant name'), findsOneWidget);
-    expect(find.text('Approved'), findsOneWidget);
     expect(
       tester.widget<PdfViewer>(find.byType(PdfViewer)).editing?.tool,
-      PdfEditTool.select,
+      PdfEditTool.freeText,
     );
 
-    await tester.tap(find.text('Applicant name'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField), 'Jordan Example');
-    await tester.tap(find.text('Apply'));
-    await tester.pumpAndSettle();
-    expect(
-      tester
-          .widget<PdfEditorView>(find.byType(PdfEditorView))
-          .controller
-          ?.acroForm
-          ?.fieldNamed('Applicant name')
-          ?.value,
-      'Jordan Example',
-    );
-    expect(
-      tester
-          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Save'))
-          .onPressed,
-      isNotNull,
-    );
-    await tester.tap(find.text('Done'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
-    await tester.pumpAndSettle();
+    // Arming a tool is not an edit: Save stays disabled until the page
+    // actually changes.
     expect(
       tester
           .widget<FilledButton>(find.widgetWithText(FilledButton, 'Save'))

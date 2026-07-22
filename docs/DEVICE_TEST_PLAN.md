@@ -8,9 +8,11 @@ during beta testing.
 
 1. Install the signed debug APK with `adb install -r app-debug.apk`.
 2. Launch QPdf and verify Home, Quick actions, and Recent documents.
-3. Choose **Fill & Sign**, open the form, enter text via **Fill form fields**,
-   toggle a check box, use **Type on page** to place free text on a flat area,
-   add a handwritten signature, Save As, close, and reopen in another viewer.
+3. Choose **Fill & Sign**, open the form, use **Type on page** to place free
+   text over each entry area, add a handwritten signature, Save As, close, and
+   reopen in another viewer. Interactive AcroForm filling was removed, so run
+   this against a flattened or scanned form as well as a tagged one — both
+   must behave identically.
 4. Mark text and part of an image for redaction. Confirm Save is blocked until
    **Apply Securely**, review the image-only warning, apply, Save As, and verify
    the covered content is not searchable or selectable in another viewer.

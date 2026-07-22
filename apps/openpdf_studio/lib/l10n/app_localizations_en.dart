@@ -31,7 +31,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionFillAndSign => 'Fill & Sign';
 
   @override
-  String get fillAndSignSubtitle => 'Complete forms and add your signature';
+  String get fillAndSignSubtitle => 'Type on any page and add your signature';
 
   @override
   String get actionOpen => 'Open PDF';

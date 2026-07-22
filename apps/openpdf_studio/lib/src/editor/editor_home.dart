@@ -25,9 +25,42 @@ import '../services/pdf_external_modification_exception.dart';
 import '../services/recent_documents_service.dart';
 import '../services/secure_redaction_service.dart';
 
-final _qpdfEditorTools = Set<PdfEditTool>.unmodifiable(
-  PdfEditTool.values.where((tool) => tool != PdfEditTool.redact),
-);
+/// The tools QPdf arms in the page toolbar.
+///
+/// Deliberately a short, explicit list rather than "every tool the engine
+/// offers". The engine also ships construction-takeoff measurement tools
+/// (distance/area/volume/angle/arc/slope/calibrate) and Bluebeam-style
+/// polyline, cloud, callout, stamp, and count tools; those belong to a
+/// drawing-review product, not a general PDF editor, and their toolbar
+/// groups crowded out the actions people actually open QPdf to perform.
+///
+/// [PdfEditTool.redact] stays out on purpose: redaction is destructive and
+/// runs through the separate Apply Securely flow, not a toolbar toggle.
+final _qpdfEditorTools = Set<PdfEditTool>.unmodifiable(const <PdfEditTool>{
+  // Pick, move, and resize anything already on the page.
+  PdfEditTool.select,
+  // Fill by typing on the page. [PdfEditTool.form] is deliberately absent:
+  // AcroForm filling was removed because its field names are machine names
+  // that mean nothing to a reader, and a /Btn field owning several widgets
+  // stores a single value, so ticking one grouped box necessarily clears its
+  // siblings. Free text works the same way on every document - tagged,
+  // flattened, or scanned - with no form data structure to misread.
+  PdfEditTool.freeText,
+  PdfEditTool.signature,
+  // Review markup.
+  PdfEditTool.note,
+  PdfEditTool.highlight,
+  PdfEditTool.ink,
+  PdfEditTool.eraser,
+  // Basic shapes.
+  PdfEditTool.rectangle,
+  PdfEditTool.ellipse,
+  PdfEditTool.line,
+  PdfEditTool.arrow,
+  // Insert an image; edit existing page content.
+  PdfEditTool.image,
+  PdfEditTool.content,
+});
 
 class EditorHome extends StatefulWidget {
   const EditorHome({
@@ -1620,17 +1653,6 @@ class _EditorHomeState extends State<EditorHome> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              key: const Key('fill-form-fields-button'),
-              leading: const Icon(Icons.edit_document),
-              title: const Text('Fill form fields'),
-              subtitle: Text(
-                editing.acroForm == null
-                    ? 'No existing fields found. Use “Type on page” instead.'
-                    : 'Tap text fields, check boxes, radio buttons, or choices.',
-              ),
-              onTap: () => Navigator.pop(context, 'fill'),
-            ),
-            ListTile(
               key: const Key('type-on-page-button'),
               leading: const Icon(Icons.text_fields),
               title: const Text('Type on page'),
@@ -1659,12 +1681,6 @@ class _EditorHomeState extends State<EditorHome> {
       ),
     );
     switch (choice) {
-      case 'fill':
-        // Interactive AcroForm controls are mounted in reader/select mode.
-        // The Form tool is intentionally reserved for field authoring and
-        // suppresses direct input while it owns page gestures.
-        editing.tool = PdfEditTool.select;
-        await _showFormFieldFiller(editing);
       case 'text':
         // Free-text typing works on any page, including flattened or scanned
         // forms that carry no interactive fields. Drag a box, then type.
@@ -1680,204 +1696,6 @@ class _EditorHomeState extends State<EditorHome> {
         editing.tool = PdfEditTool.signature;
       case 'digital':
         await _addDigitalSignature(editing);
-    }
-  }
-
-  Future<void> _showFormFieldFiller(PdfEditingController editing) async {
-    final fields = editing.acroForm?.fields ?? const <PdfFormField>[];
-    final fillable = fields
-        .where(
-          (field) =>
-              !field.isReadOnly &&
-              const {
-                PdfFieldType.text,
-                PdfFieldType.checkBox,
-                PdfFieldType.radioGroup,
-                PdfFieldType.comboBox,
-                PdfFieldType.listBox,
-              }.contains(field.type),
-        )
-        .toList();
-    if (fillable.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No fillable fields found. Use Edit > Form to create fields.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetContext) => StatefulBuilder(
-        builder: (context, setSheetState) {
-          final current = editing.acroForm;
-          final currentFields = [
-            for (final original in fillable)
-              ?current?.fieldNamed(original.name),
-          ];
-          return SafeArea(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.sizeOf(context).height * 0.78,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 16, 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Form fields',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(sheetContext),
-                          child: const Text('Done'),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  Flexible(
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: currentFields.length,
-                      separatorBuilder: (_, _) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final field = currentFields[index];
-                        if (field.type == PdfFieldType.checkBox) {
-                          return SwitchListTile.adaptive(
-                            title: Text(field.name),
-                            subtitle: const Text('Check box'),
-                            value: field.isChecked,
-                            onChanged: (_) {
-                              editing.toggleFormCheckBox(field.name);
-                              setSheetState(() {});
-                            },
-                          );
-                        }
-                        return ListTile(
-                          leading: Icon(_formFieldIcon(field.type)),
-                          title: Text(field.name),
-                          subtitle: Text(_formFieldValue(field)),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () async {
-                            if (field.type == PdfFieldType.text) {
-                              await _editTextFormField(editing, field);
-                            } else {
-                              await _chooseFormFieldValue(editing, field);
-                            }
-                            if (context.mounted) setSheetState(() {});
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  IconData _formFieldIcon(PdfFieldType type) => switch (type) {
-    PdfFieldType.text => Icons.text_fields,
-    PdfFieldType.radioGroup => Icons.radio_button_checked,
-    PdfFieldType.comboBox ||
-    PdfFieldType.listBox => Icons.arrow_drop_down_circle_outlined,
-    _ => Icons.edit_document,
-  };
-
-  String _formFieldValue(PdfFormField field) {
-    final value = field.value;
-    if (value == null || value.isEmpty || value == 'Off') {
-      return switch (field.type) {
-        PdfFieldType.text => 'Empty text field',
-        PdfFieldType.radioGroup => 'No option selected',
-        _ => 'Choose an option',
-      };
-    }
-    return value;
-  }
-
-  Future<void> _editTextFormField(
-    PdfEditingController editing,
-    PdfFormField field,
-  ) async {
-    var draft = field.value ?? '';
-    final value = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(field.name),
-        content: TextFormField(
-          initialValue: draft,
-          autofocus: true,
-          maxLines: field.isMultiline ? 5 : 1,
-          decoration: const InputDecoration(labelText: 'Value'),
-          onChanged: (value) => draft = value,
-          onFieldSubmitted: field.isMultiline
-              ? null
-              : (value) => Navigator.pop(context, value),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, draft),
-            child: const Text('Apply'),
-          ),
-        ],
-      ),
-    );
-    if (value != null) editing.setFormFieldText(field.name, value);
-  }
-
-  Future<void> _chooseFormFieldValue(
-    PdfEditingController editing,
-    PdfFormField field,
-  ) async {
-    final options = field.type == PdfFieldType.radioGroup
-        ? field.onStates.map((value) => (value, value)).toList()
-        : field.options;
-    if (options.isEmpty) return;
-    final value = await showDialog<String>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: Text(field.name),
-        children: [
-          RadioGroup<String>(
-            groupValue: field.value,
-            onChanged: (value) => Navigator.pop(context, value),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final (export, display) in options)
-                  RadioListTile<String>(title: Text(display), value: export),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-    if (value == null) return;
-    if (field.type == PdfFieldType.radioGroup) {
-      editing.setFormRadioValue(field.name, value);
-    } else {
-      editing.setFormChoiceValue(field.name, value);
     }
   }
 

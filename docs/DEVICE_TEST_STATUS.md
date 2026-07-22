@@ -6,6 +6,14 @@ Updated: 2026-07-21
 > on-device AI model were removed from QPdf. Entries below that referenced a
 > portable/SmolLM model or Phase C1–C4 form intelligence have been dropped;
 > the remaining device-test results still apply to the shipping app.
+>
+> Note (2026-07-23): Interactive AcroForm filling was removed as well — the
+> Form fields sheet titled rows with machine field names, and a /Btn field
+> owning several widgets stores one value, so ticking one grouped check box
+> cleared its siblings. Fill & Sign now offers Type on page (free text) plus
+> handwritten and digital signatures. The AcroForm bullets below are retained
+> as a record of what passed before removal but no longer describe the app,
+> and the form-filling workflow needs re-testing in its free-text form.
 
 ## Samsung SM-T860 tablet — Android 12 / API 32
 

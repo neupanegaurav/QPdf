@@ -143,7 +143,7 @@ abstract class AppLocalizations {
   /// Subtitle of the Fill & Sign card.
   ///
   /// In en, this message translates to:
-  /// **'Complete forms and add your signature'**
+  /// **'Type on any page and add your signature'**
   String get fillAndSignSubtitle;
 
   /// Home action: open a PDF from storage.
