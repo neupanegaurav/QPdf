@@ -241,12 +241,12 @@ READ AND SEARCH
 
 ANNOTATE AND MARK UP
 • Highlight, underline, strike through and draw freehand
-• Add notes and type text anywhere on a page
+• Add sticky notes, shapes, arrows and images to any page
 
 FILL AND SIGN
-• Fill interactive PDF forms, including checkboxes and dropdowns
-• Draw a signature or apply a cryptographic digital signature
-• Create form fields of your own
+• Type text anywhere on a page — it works the same on scanned and flattened
+  forms as on digital ones
+• Draw a signature, or apply a cryptographic digital signature
 
 ORGANISE PAGES
 • Reorder, rotate, delete, extract and merge pages
@@ -280,13 +280,13 @@ Free, with no subscription and no watermark.
 `pdf,editor,reader,annotate,sign,signature,scan,scanner,ocr,form,fill,merge,split,compress,document`
 
 **Apple promotional text (170 char max)**
-`A complete PDF workspace that keeps your documents on your device. Read, annotate, fill forms, sign, scan, OCR and redact — free, with no account and no watermark.`
+`A complete PDF workspace that keeps your documents on your device. Read, annotate, type on any page, sign, scan, OCR and redact — free, with no account and no watermark.`
 
 **Release notes (0.1.0)**
 ```
 First release.
 • Read, search and annotate PDFs
-• Fill and sign forms, type text anywhere on a page
+• Type text anywhere on a page, then sign by hand or digitally
 • Reorder, merge, extract and rotate pages
 • Build PDFs from photos, or scan with the camera
 • On-device OCR adds searchable text without uploading pages

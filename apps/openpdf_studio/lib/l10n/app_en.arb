@@ -26,7 +26,7 @@
   },
   "actionFillAndSign": "Fill & Sign",
   "@actionFillAndSign": {
-    "description": "Primary Home action: fill forms and sign."
+    "description": "Primary Home action: type on a page and sign."
   },
   "fillAndSignSubtitle": "Type on any page and add your signature",
   "@fillAndSignSubtitle": {
