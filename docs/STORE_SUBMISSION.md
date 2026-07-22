@@ -17,14 +17,15 @@ browser and the account owner's login; nothing in an API can do them.
 | Apple Bundle ID `studio.gaurav.qpdf` | Done — registered 2026-07-22, ASC id `X56L8H43B8`, platform UNIVERSAL |
 | iOS/macOS export-compliance + privacy plist keys | Done — see §6 |
 | Android 16 KB page-size compliance | Done — see §6; gate is `tool/verify_16kb_alignment.sh` |
-| Screenshots (Android phone + tablet) | Started — 4 captured in `store/screenshots/`, see §7 |
+| Screenshots (Android phone + tablet) | Done — 4 phone portrait + 3 tablet landscape, see §7 |
 | **Play Console app record** | **YOU** — §3 |
 | **Play: first AAB upload (browser only)** | **YOU** — §3 |
 | **Play: grant `claude-play-publisher@nearu-play-publisher.iam.gserviceaccount.com`** | **YOU** — §3 |
 | **App Store Connect app record** | **YOU** — §4 |
 | Privacy-policy page | Written — `docs/privacy.html`; needs a push + Pages switch, §5 |
-| Screenshots + feature graphic | **YOU** — §7 |
-| iOS archive/upload | Blocked — this Mac has Command Line Tools only, no full Xcode |
+| Feature graphic + 512 icon | Done — `store/graphics/`, regenerate from `tool/feature_graphic.html` |
+| iOS simulator screenshots | Started — iPad 13" landscape captured; iPhone 6.9" outstanding, see §7 |
+| iOS archive/upload | Blocked — needs full **stable** Xcode; a beta-Xcode archive is rejected `ITMS-90111` |
 
 Keystore backup is not optional. `apps/openpdf_studio/android/key.properties`
 and `android/qpdf-upload-keystore.jks` are gitignored, so git is **not** a
@@ -223,11 +224,23 @@ rather than the synthetic test-corpus fixture. Regenerate the document with
 Phones are portrait, tablets landscape. The feature graphic is regenerated from
 `tool/feature_graphic.html` with headless Chrome at exactly 1024 × 500.
 
-**Still missing: the iOS sets**, and they cannot be produced on Mac A. Apple
-rejects screenshots showing Android UI, so iPhone 6.9" and iPad 13" must be
-captured from a simulator or device once an iOS build exists — Mac B. Drop them
-in `store/screenshots/ios-iphone/` and `ios-ipad/` (iPad landscape) and
-`tool/publish_asc.py screenshots` will pick them up by folder.
+**iPad 13" is started, iPhone 6.9" is not.**
+`screenshots/ios-ipad/01-home.png` is a real 2752 × 2064 landscape capture from
+the iOS simulator build on an iPad Pro 13-inch (M5), status bar overridden to
+9:41. That meets Apple's one-screenshot minimum for the size.
+
+Two gaps remain. Neither needs Mac B — the simulator build works on Mac A now:
+
+- **More iPad frames.** `simctl` has no tap command, so `xcrun simctl launch`
+  only ever lands on Home. Driving further needs an Xcode UI test, `idb`, or
+  Accessibility permission for AppleScript.
+- **iPhone 6.9" (1290 × 2796 or 1320 × 2868).** An iPhone 17 Pro Max simulator
+  is available; install the same `Runner.app` and capture as above.
+
+Drop files in `store/screenshots/ios-iphone/` and `ios-ipad/` and
+`tool/publish_asc.py screenshots` picks them up by folder. Never ship a frame
+containing the "Apple Account Verification" alert — it carries a real email
+address; clear it by restarting SpringBoard on that simulator.
 
 ---
 
