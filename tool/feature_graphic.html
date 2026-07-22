@@ -1,0 +1,116 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>QPdf feature graphic</title>
+<style>
+  /* Palette lifted from docs/assets/site.css so the store art and the
+     marketing page read as one brand. */
+  :root {
+    --brand-700: #0a44c8;
+    --brand-600: #0e5fe8;
+    --brand-500: #2f86ff;
+    --brand-400: #6ea9ff;
+    --bg: #070a10;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1024px; height: 500px; overflow: hidden; }
+  body {
+    font: 400 16px/1.4 -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .canvas {
+    position: relative;
+    width: 1024px; height: 500px;
+    background:
+      radial-gradient(120% 150% at 88% 12%, rgba(47,134,255,.34) 0%, transparent 55%),
+      radial-gradient(90% 120% at 4% 96%, rgba(10,68,200,.42) 0%, transparent 60%),
+      linear-gradient(140deg, #070a10 0%, #0a1020 45%, #0b1a38 100%);
+    overflow: hidden;
+  }
+
+  /* Faint page-grid motif — this is a PDF tool, so the texture is ruled paper. */
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: linear-gradient(105deg, #000 20%, transparent 78%);
+    -webkit-mask-image: linear-gradient(105deg, #000 20%, transparent 78%);
+  }
+
+  .content {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 46px;
+    /* Generous side padding: Play crops this asset on some surfaces, so
+       nothing meaningful sits within ~72px of an edge. */
+    padding: 0 78px;
+  }
+
+  .mark {
+    width: 172px; height: 172px;
+    flex: 0 0 172px;
+    border-radius: 42px;
+    overflow: hidden;
+    box-shadow:
+      0 2px 6px rgba(0,0,0,.4),
+      0 26px 60px rgba(4,10,28,.72),
+      0 0 0 1px rgba(255,255,255,.08) inset;
+  }
+  .mark img { display: block; width: 100%; height: 100%; }
+
+  .wordmark {
+    font-size: 112px;
+    font-weight: 700;
+    letter-spacing: -.045em;
+    line-height: 1;
+    color: #fff;
+    background: linear-gradient(180deg, #ffffff 38%, var(--brand-400) 148%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .tagline {
+    margin-top: 13px;
+    font-size: 30px;
+    font-weight: 500;
+    letter-spacing: -.014em;
+    color: #cfe0fb;
+    /* One line or it unbalances the block against the icon. */
+    white-space: nowrap;
+  }
+
+  .pills { margin-top: 26px; display: flex; gap: 11px; }
+  .pill {
+    font-size: 18.5px;
+    font-weight: 550;
+    letter-spacing: .002em;
+    color: #dbe8fd;
+    padding: 9px 18px;
+    border-radius: 999px;
+    background: rgba(120,170,255,.13);
+    border: 1px solid rgba(150,190,255,.26);
+    white-space: nowrap;
+  }
+</style>
+
+<div class="canvas">
+  <div class="grid"></div>
+  <div class="content">
+    <div class="mark"><img src="icon.png" alt=""></div>
+    <div>
+      <div class="wordmark">QPdf</div>
+      <div class="tagline">Read, annotate and sign &mdash; on your device</div>
+      <div class="pills">
+        <span class="pill">No account</span>
+        <span class="pill">No ads</span>
+        <span class="pill">On-device OCR</span>
+        <span class="pill">Free</span>
+      </div>
+    </div>
+  </div>
+</div>

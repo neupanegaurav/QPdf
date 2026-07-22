@@ -203,21 +203,31 @@ manifest, macOS release entitlements granted user-selected file read-write,
 
 `apps/openpdf_studio/assets/branding/qpdf-icon-master.png` is the icon source.
 
-Four real captures from the release build on the 16 KB emulator are already in
-`store/screenshots/`:
+**Everything Play needs is produced.** All of it comes from the signed release
+build running on the 16 KB emulator, against a presentable sample agreement
+rather than the synthetic test-corpus fixture. Regenerate the document with
+`tool/sample_document.html` (Chrome `--print-to-pdf`).
 
-- `android-phone/01-home.png` — 1080 × 2400, Home dashboard
-- `android-phone/02-document-view.png` — 1080 × 2400, form PDF open
-- `android-tablet/01-document-view.png` — 1800 × 2560, page panel + tool ribbon
-- `android-tablet/02-document-tools.png` — 1800 × 2560, full document-tools menu
+| File | Size | Shows |
+| --- | --- | --- |
+| `graphics/play-icon-512.png` | 512 × 512, no alpha | brand mark |
+| `graphics/play-feature-graphic-1024x500.png` | 1024 × 500 | wordmark + privacy claims |
+| `screenshots/android-phone/01-home.png` | 1080 × 2400 | Home dashboard |
+| `screenshots/android-phone/02-document-view.png` | 1080 × 2400 | agreement open, page bar |
+| `screenshots/android-phone/03-markup-tools.png` | 1080 × 2400 | markup tools, colours, opacity |
+| `screenshots/android-phone/04-page-organiser.png` | 1080 × 2400 | page organiser |
+| `screenshots/android-tablet/01-home.png` | 2560 × 1600 | landscape dashboard |
+| `screenshots/android-tablet/02-document-view.png` | 2560 × 1600 | thumbnail panel + tool rail |
+| `screenshots/android-tablet/03-fill-and-sign.png` | 2560 × 1600 | Fill & Sign sheet |
 
-All four meet Play's phone and tablet specs. Worth adding before launch, since
-they show the features the listing sells: Fill & Sign on a real form, the page
-organiser, secure redaction, and the OCR progress state. They need a
-better-looking sample document than the synthetic test-corpus fixture used here.
-The feature graphic and the iOS/iPad sets still have to be produced — Apple
-rejects screenshots that show Android UI, so those must come from a simulator or
-device once an iOS build exists.
+Phones are portrait, tablets landscape. The feature graphic is regenerated from
+`tool/feature_graphic.html` with headless Chrome at exactly 1024 × 500.
+
+**Still missing: the iOS sets**, and they cannot be produced on Mac A. Apple
+rejects screenshots showing Android UI, so iPhone 6.9" and iPad 13" must be
+captured from a simulator or device once an iOS build exists — Mac B. Drop them
+in `store/screenshots/ios-iphone/` and `ios-ipad/` (iPad landscape) and
+`tool/publish_asc.py screenshots` will pick them up by folder.
 
 ---
 
@@ -348,21 +358,35 @@ cryptography (HTTPS and standard platform hash/signature algorithms).
 
 ---
 
-## 10. What I can automate once the two app records exist
+## 10. What runs from the terminal once the two app records exist
+
+`tool/publish_play.py` and `tool/publish_asc.py` read the copy above straight
+out of §8, so the listing cannot drift from this file. **Neither writes anything
+without `--commit`** — without it they build the edit, print it, and throw it
+away. Both live in `tool/` and are tracked; only the credentials they read stay
+in the untracked kit.
 
 ```bash
-KIT=store-upload-kit
-# Android — upload and promote without the browser
-$KIT/.venv/bin/python $KIT/android/play.py status
-$KIT/.venv/bin/python $KIT/android/play.py upload \
-  apps/openpdf_studio/build/app/outputs/bundle/release/app-release.aab --track internal
-$KIT/.venv/bin/python $KIT/android/play.py promote --from internal --to production --rollout 0.2
+PY=store-upload-kit/.venv/bin/python
 
-# Apple — inspect the account and uploaded builds
-$KIT/.venv/bin/python $KIT/ios/asc.py apps
-$KIT/.venv/bin/python $KIT/ios/asc.py bundleids
-$KIT/.venv/bin/python $KIT/ios/asc.py builds <app-id>
+# Preflight - parses the copy, lists assets, reports whether the record exists.
+$PY tool/store_listing.py            # what would be published
+$PY tool/publish_play.py check
+$PY tool/publish_asc.py check
+
+# Google Play
+$PY tool/publish_play.py listing --commit          # text + icon + feature + shots
+$PY tool/publish_play.py bundle \
+  apps/openpdf_studio/build/app/outputs/bundle/release/app-release.aab \
+  --track internal --commit
+
+# App Store Connect
+$PY tool/publish_asc.py metadata --commit
+$PY tool/publish_asc.py screenshots --commit       # once ios-* folders are filled
 ```
+
+The older `store-upload-kit/android/play.py` and `ios/asc.py` still work for
+ad-hoc queries (`status`, `apps`, `bundleids`, `builds`, `promote`).
 
 `store-upload-kit/` holds live publishing credentials for both accounts. It has
 its own `.gitignore` of `*`, and the repo's root `.gitignore` blocks `*.p8`,

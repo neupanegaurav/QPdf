@@ -22,3 +22,7 @@ docs/playstore-tools/*.p8
 
 # macOS Finder metadata
 .DS_Store
+
+# Python bytecode from tool/ scripts
+__pycache__/
+*.pyc
