@@ -22,7 +22,7 @@ browser and the account owner's login; nothing in an API can do them.
 | **Play: first AAB upload (browser only)** | **YOU** — §3 |
 | **Play: grant `claude-play-publisher@nearu-play-publisher.iam.gserviceaccount.com`** | **YOU** — §3 |
 | **App Store Connect app record** | **YOU** — §4 |
-| Hosted privacy-policy URL | **YOU** — §5 (content already written) |
+| Privacy-policy page | Written — `docs/privacy.html`; needs a push + Pages switch, §5 |
 | Screenshots + feature graphic | **YOU** — §7 |
 | iOS archive/upload | Blocked — this Mac has Command Line Tools only, no full Xcode |
 
@@ -104,16 +104,36 @@ The Bundle ID is already registered, so the picker will offer it.
 
 ---
 
-## 5. Privacy policy — needs a public URL
+## 5. Privacy policy — hosted free on GitHub Pages
 
-Both stores reject a submission without a reachable privacy-policy page.
-`docs/PRIVACY.md` already has accurate content. Fastest hosting:
+Both stores reject a submission without a reachable privacy-policy page. No
+domain purchase is needed: a `github.io` URL is accepted by Apple and Google.
+`neupanegaurav/QPdf` is already a public repo, so Pages costs nothing.
 
-1. Push this repo to <https://github.com/neupanegaurav/QPdf> (nothing is pushed
-   yet — `main` is 3 commits ahead of `origin/main`).
-2. GitHub → **Settings → Pages → Source: Deploy from a branch → main / /docs**.
-3. The URL becomes `https://neupanegaurav.github.io/QPdf/PRIVACY` — use that in
-   both stores.
+Two ready-to-serve pages are committed:
+
+- `docs/privacy.html` — the policy itself, written from QPdf's actual behaviour
+- `docs/index.html` — a small landing page, usable as the Marketing URL
+- `docs/.nojekyll` — stops GitHub from running the other markdown files through
+  Jekyll
+
+To publish:
+
+1. `git push origin remove-smart-fill` (or merge to `main` and push that —
+   whichever branch you point Pages at).
+2. GitHub → **Settings → Pages → Source: Deploy from a branch → `<branch>` /
+   `/docs`** → Save. It goes live in about a minute.
+
+The resulting URLs:
+
+| Field | URL |
+| --- | --- |
+| Privacy policy (both stores) | `https://neupanegaurav.github.io/QPdf/privacy.html` |
+| Marketing URL | `https://neupanegaurav.github.io/QPdf/` |
+| Support URL | `https://github.com/neupanegaurav/QPdf/issues` |
+
+Load the privacy URL in a browser before pasting it into either store — a link
+that 404s is an instant rejection, and Pages needs a minute after you save.
 
 Accurate one-line summary for the store forms: *QPdf processes documents on the
 device. It has no account, no analytics SDK, and no advertising SDK, and it

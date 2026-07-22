@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QPdf — Privacy Policy</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #16191d;
+    --muted: #5c6570;
+    --line: #e3e7ec;
+    --accent: #0757e8;
+    --card: #f6f8fb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1216;
+      --fg: #e8ecf1;
+      --muted: #9aa5b1;
+      --line: #262c34;
+      --accent: #6ea4ff;
+      --card: #161b21;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+  header { border-bottom: 1px solid var(--line); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+  .brand { display: flex; align-items: center; gap: .65rem; margin-bottom: 1.25rem; }
+  .mark {
+    width: 2.1rem; height: 2.1rem; border-radius: .5rem;
+    background: var(--accent); color: #fff; display: grid; place-items: center;
+    font-weight: 700; font-size: .78rem; letter-spacing: .02em;
+  }
+  .brand span { font-weight: 650; font-size: 1.05rem; }
+  h1 { font-size: 1.85rem; line-height: 1.25; margin: 0 0 .4rem; letter-spacing: -.015em; }
+  h2 {
+    font-size: 1.15rem; margin: 2.4rem 0 .7rem; letter-spacing: -.01em;
+    padding-top: 1.4rem; border-top: 1px solid var(--line);
+  }
+  h2:first-of-type { border-top: 0; padding-top: 0; }
+  p, li { color: var(--fg); }
+  .lede { color: var(--muted); font-size: 1.02rem; margin: 0; }
+  .meta { color: var(--muted); font-size: .875rem; margin: .9rem 0 0; }
+  ul { padding-left: 1.15rem; }
+  li { margin: .45rem 0; }
+  a { color: var(--accent); }
+  .callout {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: .7rem; padding: 1.1rem 1.25rem; margin: 1.5rem 0;
+  }
+  .callout p { margin: 0; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .87em; background: var(--card); border: 1px solid var(--line);
+    border-radius: .3rem; padding: .1rem .35rem; overflow-wrap: anywhere;
+  }
+  footer {
+    margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+    color: var(--muted); font-size: .875rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand"><div class="mark">PDF</div><span>QPdf</span></div>
+  <h1>Privacy Policy</h1>
+  <p class="lede">QPdf is a local-first PDF reader and editor. Your documents stay on your device.</p>
+  <p class="meta">Effective 22 July 2026 · Applies to QPdf for Android, iOS, macOS, Windows and Linux</p>
+</header>
+
+<div class="callout">
+  <p><strong>The short version.</strong> QPdf has no account, no advertising SDK
+  and no analytics SDK. It does not upload the PDFs you open, and it does not
+  collect personal information about you.</p>
+</div>
+
+<h2>Information we collect</h2>
+<p>None. QPdf does not collect, transmit or sell personal information. There is
+no sign-up, no user profile and no tracking identifier. We cannot see which
+documents you open, what they contain, or how you use the app.</p>
+
+<h2>How your documents are handled</h2>
+<p>Opening, rendering, searching, annotating, editing, form filling, signing,
+page operations, scanning and optical character recognition (OCR) all run
+entirely on your device. Document content is never sent to us or to any third
+party.</p>
+
+<h2>When QPdf uses the network</h2>
+<p>QPdf makes one kind of outbound request, and only if you choose to use OCR:</p>
+<ul>
+  <li><strong>OCR model download.</strong> The first time you run
+  “Make text searchable (OCR)”, QPdf downloads a text-recognition model
+  (about 21&nbsp;MB) over HTTPS from its published release location. The file is
+  checked against a known SHA-256 checksum before it is used. No part of your
+  document is included in that request.</li>
+</ul>
+<p>Printing and sharing are not network features: they hand the current PDF to
+your operating system's own print or share sheet, and only after you ask for it.
+Where the file goes from there is governed by the destination you pick.</p>
+
+<h2>Device permissions</h2>
+<ul>
+  <li><strong>Camera</strong> — used only while you are scanning a document with
+  the in-app scanner. QPdf does not access the camera at any other time.</li>
+  <li><strong>Photos / files</strong> — used only when you choose images to turn
+  into a PDF, or pick a PDF to open. QPdf sees only the items you select.</li>
+</ul>
+<p>You can decline or revoke either permission in your system settings. The rest
+of the app continues to work.</p>
+
+<h2>Data stored on your device</h2>
+<p>Two small pieces of state are kept locally in QPdf's private app storage.
+Neither leaves your device.</p>
+<ul>
+  <li><strong>Recent documents.</strong> For up to 12 files, QPdf remembers the
+  file location, display name, a stable identifier and when you last opened it —
+  so the list on the home screen works. It does not store document contents.</li>
+  <li><strong>Crash recovery.</strong> While you have unsaved changes, QPdf keeps
+  a recovery journal so your work survives a crash or a force-quit. It is deleted
+  as soon as you save, export or discard those changes.</li>
+</ul>
+<p>Uninstalling QPdf removes both. Your PDFs are your own files in your own
+storage; QPdf never deletes them, and removing the app does not touch them.</p>
+
+<h2>Children</h2>
+<p>QPdf is a general-purpose productivity tool. It is not directed at children
+and does not knowingly collect information from anyone, including children.</p>
+
+<h2>Your rights</h2>
+<p>Rights such as access, correction, deletion and portability apply to personal
+data held by a company. QPdf holds none: there is nothing for us to disclose,
+correct, export or erase, because nothing ever reaches us. To remove the local
+data described above, delete the app.</p>
+
+<h2>Changes to this policy</h2>
+<p>If QPdf's data practices change — for example if a future version adds an
+optional online feature — this page will be updated and the effective date
+above will change. Material changes will also be noted in the app's release
+notes.</p>
+
+<h2>Contact</h2>
+<p>Questions about this policy, or about how QPdf handles data, can be raised at
+<a href="https://github.com/neupanegaurav/QPdf/issues">github.com/neupanegaurav/QPdf/issues</a>.</p>
+
+<footer>
+  QPdf — a free, local-first PDF workspace. ·
+  <a href="./">Home</a> ·
+  <a href="https://github.com/neupanegaurav/QPdf">Source code</a>
+</footer>
+
+</div>
+</body>
+</html>

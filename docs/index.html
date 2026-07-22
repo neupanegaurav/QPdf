@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QPdf — a free, local-first PDF reader and editor</title>
+<meta name="description" content="Read, annotate, fill, sign, scan and OCR PDFs privately on your own device. No account, no ads, no tracking.">
+<style>
+  :root {
+    --bg: #ffffff; --fg: #16191d; --muted: #5c6570;
+    --line: #e3e7ec; --accent: #0757e8; --card: #f6f8fb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1216; --fg: #e8ecf1; --muted: #9aa5b1;
+      --line: #262c34; --accent: #6ea4ff; --card: #161b21;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+  .brand { display: flex; align-items: center; gap: .7rem; margin-bottom: 2rem; }
+  .mark {
+    width: 2.4rem; height: 2.4rem; border-radius: .55rem;
+    background: var(--accent); color: #fff; display: grid; place-items: center;
+    font-weight: 700; font-size: .85rem;
+  }
+  .brand span { font-weight: 650; font-size: 1.15rem; }
+  h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 .75rem; letter-spacing: -.02em; }
+  .lede { color: var(--muted); font-size: 1.08rem; margin: 0 0 2rem; }
+  h2 { font-size: 1.1rem; margin: 2.5rem 0 .8rem; letter-spacing: -.01em; }
+  .grid {
+    display: grid; gap: .8rem; margin: 0; padding: 0; list-style: none;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  }
+  .grid li {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: .7rem; padding: .95rem 1.1rem;
+  }
+  .grid strong { display: block; margin-bottom: .15rem; }
+  .grid span { color: var(--muted); font-size: .9rem; }
+  .callout {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: .7rem; padding: 1.1rem 1.25rem; margin: 2rem 0;
+  }
+  .callout p { margin: 0; }
+  a { color: var(--accent); }
+  footer {
+    margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+    color: var(--muted); font-size: .9rem;
+  }
+  footer a { margin-right: .9rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="brand"><div class="mark">PDF</div><span>QPdf</span></div>
+
+<h1>A complete PDF workspace that keeps your documents on your device.</h1>
+<p class="lede">Read, annotate, fill forms, sign, scan, OCR and redact — free,
+with no account, no subscription and no watermark.</p>
+
+<h2>What it does</h2>
+<ul class="grid">
+  <li><strong>Read &amp; search</strong><span>Fast rendering, text selection, in-document search</span></li>
+  <li><strong>Annotate</strong><span>Highlight, underline, strike through, draw, add notes</span></li>
+  <li><strong>Fill &amp; sign</strong><span>Interactive forms, drawn and cryptographic signatures</span></li>
+  <li><strong>Organise pages</strong><span>Reorder, rotate, extract, delete, merge, number</span></li>
+  <li><strong>Create</strong><span>Build PDFs from photos, or scan paper with the camera</span></li>
+  <li><strong>OCR</strong><span>Add a searchable text layer entirely on-device</span></li>
+  <li><strong>Redact</strong><span>Secure image-only output that strips hidden text</span></li>
+  <li><strong>Audit</strong><span>PDF/UA accessibility and PDF/A archiving checks</span></li>
+</ul>
+
+<div class="callout">
+  <p><strong>Private by design.</strong> No account. No advertising SDK. No
+  analytics SDK. QPdf does not upload the PDFs you open. See the
+  <a href="./privacy.html">privacy policy</a> for the detail.</p>
+</div>
+
+<h2>Support</h2>
+<p>Found a bug, or want a feature? Open an issue at
+<a href="https://github.com/neupanegaurav/QPdf/issues">github.com/neupanegaurav/QPdf/issues</a>.</p>
+
+<footer>
+  <a href="./privacy.html">Privacy policy</a>
+  <a href="https://github.com/neupanegaurav/QPdf">Source code</a>
+  <a href="https://github.com/neupanegaurav/QPdf/issues">Support</a>
+</footer>
+
+</div>
+</body>
+</html>
