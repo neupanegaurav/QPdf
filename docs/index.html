@@ -1,99 +1,536 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="no-js">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QPdf — a free, local-first PDF reader and editor</title>
-<meta name="description" content="Read, annotate, fill, sign, scan and OCR PDFs privately on your own device. No account, no ads, no tracking.">
-<style>
-  :root {
-    --bg: #ffffff; --fg: #16191d; --muted: #5c6570;
-    --line: #e3e7ec; --accent: #0757e8; --card: #f6f8fb;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0f1216; --fg: #e8ecf1; --muted: #9aa5b1;
-      --line: #262c34; --accent: #6ea4ff; --card: #161b21;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--fg);
-    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          "Helvetica Neue", Arial, sans-serif;
-    -webkit-text-size-adjust: 100%;
-  }
-  .wrap { max-width: 46rem; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
-  .brand { display: flex; align-items: center; gap: .7rem; margin-bottom: 2rem; }
-  .mark {
-    width: 2.4rem; height: 2.4rem; border-radius: .55rem;
-    background: var(--accent); color: #fff; display: grid; place-items: center;
-    font-weight: 700; font-size: .85rem;
-  }
-  .brand span { font-weight: 650; font-size: 1.15rem; }
-  h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 .75rem; letter-spacing: -.02em; }
-  .lede { color: var(--muted); font-size: 1.08rem; margin: 0 0 2rem; }
-  h2 { font-size: 1.1rem; margin: 2.5rem 0 .8rem; letter-spacing: -.01em; }
-  .grid {
-    display: grid; gap: .8rem; margin: 0; padding: 0; list-style: none;
-    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  }
-  .grid li {
-    background: var(--card); border: 1px solid var(--line);
-    border-radius: .7rem; padding: .95rem 1.1rem;
-  }
-  .grid strong { display: block; margin-bottom: .15rem; }
-  .grid span { color: var(--muted); font-size: .9rem; }
-  .callout {
-    background: var(--card); border: 1px solid var(--line);
-    border-radius: .7rem; padding: 1.1rem 1.25rem; margin: 2rem 0;
-  }
-  .callout p { margin: 0; }
-  a { color: var(--accent); }
-  footer {
-    margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
-    color: var(--muted); font-size: .9rem;
-  }
-  footer a { margin-right: .9rem; }
-</style>
+<meta name="description" content="Read, annotate, fill, sign, scan, OCR and redact PDFs privately on your own device. No account, no ads, no tracking, no watermark.">
+<meta name="theme-color" content="#0e5fe8">
+<link rel="icon" href="./assets/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="./assets/apple-touch-icon.png">
+<link rel="canonical" href="https://neupanegaurav.github.io/QPdf/">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="QPdf">
+<meta property="og:title" content="QPdf — a free, local-first PDF reader and editor">
+<meta property="og:description" content="Every PDF tool you need, running entirely on your device. No account, no ads, no tracking.">
+<meta property="og:url" content="https://neupanegaurav.github.io/QPdf/">
+<meta property="og:image" content="https://neupanegaurav.github.io/QPdf/assets/qpdf-icon-512.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="stylesheet" href="./assets/site.css">
+<script>
+  try {
+    var stored = localStorage.getItem('qpdf-theme');
+    if (stored) document.documentElement.setAttribute('data-theme', stored);
+  } catch (e) { /* storage unavailable */ }
+</script>
 </head>
 <body>
-<div class="wrap">
 
-<div class="brand"><div class="mark">PDF</div><span>QPdf</span></div>
+<a class="skip" href="#main">Skip to content</a>
 
-<h1>A complete PDF workspace that keeps your documents on your device.</h1>
-<p class="lede">Read, annotate, fill forms, sign, scan, OCR and redact — free,
-with no account, no subscription and no watermark.</p>
+<header class="site-header">
+  <div class="shell nav">
+    <a class="brand" href="./">
+      <img src="./assets/qpdf-icon.webp" alt="" width="34" height="34">
+      <span>QPdf<small>PDF reader &amp; editor</small></span>
+    </a>
 
-<h2>What it does</h2>
-<ul class="grid">
-  <li><strong>Read &amp; search</strong><span>Fast rendering, text selection, in-document search</span></li>
-  <li><strong>Annotate</strong><span>Highlight, underline, strike through, draw, add notes</span></li>
-  <li><strong>Fill &amp; sign</strong><span>Interactive forms, drawn and cryptographic signatures</span></li>
-  <li><strong>Organise pages</strong><span>Reorder, rotate, extract, delete, merge, number</span></li>
-  <li><strong>Create</strong><span>Build PDFs from photos, or scan paper with the camera</span></li>
-  <li><strong>OCR</strong><span>Add a searchable text layer entirely on-device</span></li>
-  <li><strong>Redact</strong><span>Secure image-only output that strips hidden text</span></li>
-  <li><strong>Audit</strong><span>PDF/UA accessibility and PDF/A archiving checks</span></li>
-</ul>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#features">Features</a>
+      <a href="#screens">Screens</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#platforms">Platforms</a>
+      <a href="#faq">FAQ</a>
+    </nav>
 
-<div class="callout">
-  <p><strong>Private by design.</strong> No account. No advertising SDK. No
-  analytics SDK. QPdf does not upload the PDFs you open. See the
-  <a href="./privacy.html">privacy policy</a> for the detail.</p>
-</div>
+    <div class="nav-actions">
+      <button class="icon-btn theme-toggle" type="button" aria-pressed="false" aria-label="Switch theme">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <a class="btn btn--primary btn--sm" href="#get">Get QPdf</a>
+    </div>
+  </div>
+</header>
 
-<h2>Support</h2>
-<p>Found a bug, or want a feature? Open an issue at
-<a href="https://github.com/neupanegaurav/QPdf/issues">github.com/neupanegaurav/QPdf/issues</a>.</p>
+<main id="main">
 
-<footer>
-  <a href="./privacy.html">Privacy policy</a>
-  <a href="https://github.com/neupanegaurav/QPdf">Source code</a>
-  <a href="https://github.com/neupanegaurav/QPdf/issues">Support</a>
+  <!-- ================= HERO ================= -->
+  <section class="hero">
+    <div class="backdrop" aria-hidden="true">
+      <span class="blob blob--1"></span>
+      <span class="blob blob--2"></span>
+      <span class="blob blob--3"></span>
+    </div>
+
+    <div class="shell">
+      <div class="hero-grid">
+        <div data-stagger="90">
+          <p class="pill reveal"><b>Free</b> <span class="dot" aria-hidden="true"></span> No account · No ads · No tracking</p>
+
+          <h1 class="display reveal">Every PDF tool you need.<br><span class="gradient-text">None of the surveillance.</span></h1>
+
+          <p class="lede reveal">QPdf reads, annotates, fills, signs, organises, scans, OCRs and
+          redacts your documents — entirely on your own device. No subscription, no watermark,
+          nothing uploaded.</p>
+
+          <div class="hero-cta reveal">
+            <a class="btn btn--primary" href="#get">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 21h16"/></svg>
+              Get QPdf
+            </a>
+            <a class="btn btn--ghost" href="#features">Explore the tools</a>
+          </div>
+
+          <ul class="trust reveal">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> Works offline</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> No analytics SDK</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> Open source</li>
+          </ul>
+        </div>
+
+        <div class="stage reveal" data-parallax>
+          <span class="stage-glow" aria-hidden="true"></span>
+          <div class="hero-devices">
+            <figure class="device device--tablet" data-depth="0.5" data-tilt="3.2" style="margin:0">
+              <img src="./assets/shots/tablet-tools.webp" width="1100" height="1564"
+                   alt="QPdf on a tablet showing a PDF with the tools menu open: print, OCR, share, page numbers, watermark, Bates numbers, compare, standards audit and digital signature.">
+            </figure>
+            <figure class="device device--phone" data-depth="1" data-tilt="-3.4" style="margin:0">
+              <img src="./assets/shots/phone-home.webp" width="720" height="1600"
+                   alt="QPdf home screen on a phone with Fill &amp; Sign, Open PDF, Scan, Photos and Combine actions.">
+            </figure>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MARQUEE ================= -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span>Read &amp; search</span><span>Highlight</span><span>Draw</span><span>Fill forms</span>
+      <span>Drawn signatures</span><span>Digital signatures</span><span>Merge</span><span>Reorder pages</span>
+      <span>Rotate</span><span>Extract</span><span>Page numbers</span><span>Bates numbering</span>
+      <span>Watermark</span><span>Scan with camera</span><span>Photos to PDF</span><span>On-device OCR</span>
+      <span>Secure redaction</span><span>Remove metadata</span><span>PDF/A</span><span>PDF/UA audit</span>
+      <span>Compare</span><span>Optimize</span><span>Print</span>
+      <span>Read &amp; search</span><span>Highlight</span><span>Draw</span><span>Fill forms</span>
+      <span>Drawn signatures</span><span>Digital signatures</span><span>Merge</span><span>Reorder pages</span>
+      <span>Rotate</span><span>Extract</span><span>Page numbers</span><span>Bates numbering</span>
+      <span>Watermark</span><span>Scan with camera</span><span>Photos to PDF</span><span>On-device OCR</span>
+      <span>Secure redaction</span><span>Remove metadata</span><span>PDF/A</span><span>PDF/UA audit</span>
+      <span>Compare</span><span>Optimize</span><span>Print</span>
+    </div>
+  </div>
+
+  <!-- ================= FEATURES ================= -->
+  <section class="section" id="features">
+    <div class="shell">
+      <div class="section-head reveal">
+        <p class="eyebrow">The toolkit</p>
+        <h2 class="h2">A full PDF workspace, not a viewer with a paywall.</h2>
+        <p class="lede">The tools professionals reach for — markup, forms, page surgery, OCR and
+        real redaction — in one app that never asks you to sign in.</p>
+      </div>
+
+      <div class="bento" data-stagger="60">
+        <article class="card card--wide reveal">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg></div>
+          <h3>Read &amp; search</h3>
+          <p>Fast page rendering with text selection, in-document search, thumbnails, bookmarks and
+          an outline panel. Large documents stay smooth on phone, tablet and desktop.</p>
+          <ul class="tags"><li>Text selection</li><li>Search</li><li>Thumbnails</li><li>Bookmarks</li><li>Outline</li></ul>
+        </article>
+
+        <article class="card card--tall reveal">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 20.5 8 19l11.1-11.1a2.1 2.1 0 0 0-3-3L5 16z"/><path d="m14.5 5.5 4 4"/></svg></div>
+          <h3>Fill &amp; sign</h3>
+          <p>Complete interactive forms, type text anywhere on a page, add a drawn signature, or
+          apply and verify a cryptographic digital signature.</p>
+          <ul class="tags"><li>AcroForms</li><li>Drawn signature</li><li>Digital signature</li><li>Verify</li></ul>
+        </article>
+
+        <article class="card reveal">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16.5 15 5.5a2.5 2.5 0 0 1 3.5 3.5L7.5 20H4z"/><path d="M4 20h16"/></svg></div>
+          <h3>Annotate &amp; markup</h3>
+          <p>Highlight, underline, strike through, draw freehand, drop shapes, insert text and
+          measure distances.</p>
+        </article>
+
+        <article class="card reveal">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><path d="M17 13v8M13 17h8"/></svg></div>
+          <h3>Organise pages</h3>
+          <p>Reorder, rotate, extract, delete and merge. Add page numbers, Bates numbering or a
+          watermark in one pass.</p>
+        </article>
+
+        <article class="card reveal">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M8 9h8v6H8z"/></svg></div>
+          <h3>Scan &amp; create</h3>
+          <p>Capture paper with the camera or turn a batch of photos into a clean, shareable PDF.</p>
+        </article>
+
+        <article class="card card--wide reveal">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M8 10h6M8 14h4"/></svg></div>
+          <h3>OCR that never leaves the device</h3>
+          <p>Add a selectable, searchable text layer to a scan. The recognition model is downloaded
+          once (about 21 MB, checksum-verified) and every page after that is processed locally.</p>
+          <ul class="tags"><li>Searchable text layer</li><li>One-time model</li><li>No page uploads</li></ul>
+        </article>
+
+        <article class="card card--tall reveal">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.4 3.1 8.2 7.5 9.5 4.4-1.3 7.5-5.1 7.5-9.5V6z"/><path d="M9 12h6"/></svg></div>
+          <h3>Redaction that actually redacts</h3>
+          <p>Secure redaction writes an image-only copy: searchable text, interactive content,
+          metadata and existing signatures are removed, not just covered with a black box.</p>
+          <ul class="tags"><li>Image flattening</li><li>Metadata stripped</li></ul>
+        </article>
+
+        <article class="card card--banner reveal">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="m9.5 14 1.8 1.8L15 12"/></svg></div>
+          <div>
+            <h3>Standards &amp; document hygiene</h3>
+            <p>Run a PDF/UA accessibility or PDF/A archiving audit, convert to PDF/A, optimize file
+            size, inspect document information, compare two PDFs, review security and permissions,
+            and remove hidden metadata before a file leaves your hands.</p>
+            <ul class="tags"><li>PDF/UA audit</li><li>PDF/A</li><li>Optimize</li><li>Compare</li><li>Permissions</li><li>Metadata removal</li></ul>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PRIVACY BAND ================= -->
+  <section class="section section--soft" id="privacy">
+    <div class="shell">
+      <div class="band reveal">
+        <div class="band-art" aria-hidden="true">
+          <svg viewBox="0 0 200 200" fill="none" stroke="currentColor">
+            <circle class="ring ring--slow" cx="100" cy="100" r="92" stroke-width="1" stroke-dasharray="3 9"/>
+            <circle class="ring" cx="100" cy="100" r="72" stroke-width="1" stroke-dasharray="1 7"/>
+            <circle cx="100" cy="100" r="52" stroke-width="1" opacity=".7"/>
+            <path d="M100 62 66 76v24c0 19 14 35 34 40 20-5 34-21 34-40V76z" stroke-width="2.2" stroke-linejoin="round"/>
+            <path d="M90 100.5 97.5 108l14-15" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <p class="eyebrow">Private by architecture</p>
+        <h2 class="h2">Your documents never touch a server.</h2>
+        <p class="lede">Opening, rendering, searching, annotating, editing, form filling, signing,
+        page operations, scanning and OCR all run on your device.</p>
+
+        <div class="band-grid" data-stagger="80">
+          <div class="band-item reveal"><strong>No account</strong><span>No sign-up, no profile, no tracking identifier.</span></div>
+          <div class="band-item reveal"><strong>No advertising SDK</strong><span>Nothing profiles you, and nothing sells you.</span></div>
+          <div class="band-item reveal"><strong>No analytics SDK</strong><span>We cannot see which files you open or what you do.</span></div>
+          <div class="band-item reveal"><strong>No uploads</strong><span>Document content is never sent to us or a third party.</span></div>
+        </div>
+
+        <p class="band-note">The one outbound request QPdf can make is the optional OCR model
+        download, and only if you ask for OCR — no part of your document is included in it.
+        Printing and sharing hand the file to your own operating system, only when you tap.
+        <a href="./privacy.html">Read the full privacy policy →</a></p>
+
+        <div class="hero-cta">
+          <a class="btn btn--primary" href="./privacy.html">Privacy policy</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SCREENS ================= -->
+  <section class="section" id="screens">
+    <div class="shell">
+      <div class="section-head reveal">
+        <p class="eyebrow">A look inside</p>
+        <h2 class="h2">Designed to feel native everywhere.</h2>
+        <p class="lede">One adaptive layout: a focused, task-first home on phones, and the full
+        panel-driven editor on tablets and desktops.</p>
+      </div>
+
+      <div class="tabs reveal" role="tablist" aria-label="Screenshots">
+        <button class="tab" id="tab-home" type="button" role="tab" aria-selected="true" aria-controls="panel-home" tabindex="0">Home</button>
+        <button class="tab" id="tab-read" type="button" role="tab" aria-selected="false" aria-controls="panel-read" tabindex="-1">Reading</button>
+        <button class="tab" id="tab-tools" type="button" role="tab" aria-selected="false" aria-controls="panel-tools" tabindex="-1">Tools</button>
+        <button class="tab" id="tab-tablet" type="button" role="tab" aria-selected="false" aria-controls="panel-tablet" tabindex="-1">Tablet editor</button>
+      </div>
+
+      <div class="panel" id="panel-home" role="tabpanel" aria-labelledby="tab-home" data-active tabindex="0">
+        <div class="panel-copy">
+          <h3>Start with what you actually came to do</h3>
+          <p>Fill &amp; Sign sits at the top of the home screen, with Open PDF, Scan, Photos and
+          Combine one tap away. Recent documents keeps your last twelve files within reach —
+          stored locally, contents never recorded.</p>
+          <ul class="checks">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> Task-first launcher, not a file dump</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> Recent list stays on device</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> System typography, light and dark</li>
+          </ul>
+        </div>
+        <div class="shot-stage">
+          <figure class="device device--phone" style="margin:0">
+            <img src="./assets/shots/phone-home.webp" width="720" height="1600" loading="lazy"
+                 alt="QPdf home screen with Fill &amp; Sign highlighted and Open PDF, Scan, Photos and Combine tiles below.">
+          </figure>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-read" role="tabpanel" aria-labelledby="tab-read" tabindex="0">
+        <div class="panel-copy">
+          <h3>Read, search and mark up on the phone</h3>
+          <p>A compact toolbar keeps page navigation, search and undo within thumb reach, while
+          Tools expands to the full editing set when you need it.</p>
+          <ul class="checks">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> Page counter, search and zoom in one bar</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> Undo and redo on every edit</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> Live form fields, filled in place</li>
+          </ul>
+        </div>
+        <div class="shot-stage">
+          <figure class="device device--phone" style="margin:0">
+            <img src="./assets/shots/phone-document.webp" width="720" height="1600" loading="lazy"
+                 alt="A PDF form open in QPdf on a phone, showing the page counter, search field, select tool and Tools button.">
+          </figure>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-tools" role="tabpanel" aria-labelledby="tab-tools" tabindex="0">
+        <div class="panel-copy">
+          <h3>Every professional tool, one menu deep</h3>
+          <p>OCR, share, page numbers, watermarks, Bates numbering, document comparison, standards
+          audits, permissions, optimisation, metadata removal, PDF/A conversion and digital
+          signatures — all local.</p>
+          <ul class="checks">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> No feature hidden behind a subscription</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> Sign, verify and audit in the same place</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> Limitations shown honestly in-app</li>
+          </ul>
+        </div>
+        <div class="shot-stage">
+          <figure class="device device--tablet" style="margin:0">
+            <img src="./assets/shots/tablet-tools.webp" width="1100" height="1564" loading="lazy"
+                 alt="The QPdf tools menu on a tablet listing print, OCR, share, page numbers, watermark, Bates numbers, document information, compare, standards audit, security, optimize, metadata removal, PDF/A conversion and signatures.">
+          </figure>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-tablet" role="tabpanel" aria-labelledby="tab-tablet" tabindex="0">
+        <div class="panel-copy">
+          <h3>A desktop-class editor on a tablet</h3>
+          <p>Page thumbnails, panels, zoom control and a full markup rail — Select, Markup, Draw,
+          Shapes, Insert, Measure and Edit — with Fill &amp; Sign always one tap away.</p>
+          <ul class="checks">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> Drag-to-reorder page thumbnails</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> Panels for search, bookmarks and properties</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg> The same build scales to macOS and Windows</li>
+          </ul>
+        </div>
+        <div class="shot-stage">
+          <figure class="device device--tablet" style="margin:0">
+            <img src="./assets/shots/tablet-document.webp" width="1100" height="1564" loading="lazy"
+                 alt="QPdf tablet editor with the page thumbnail panel open and the Fill &amp; Sign, Select, Markup, Draw, Shapes, Insert and Measure tool rail along the bottom.">
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= HOW ================= -->
+  <section class="section section--soft">
+    <div class="shell">
+      <div class="section-head reveal">
+        <p class="eyebrow">How it works</p>
+        <h2 class="h2">Open. Work. Save. That is the whole loop.</h2>
+      </div>
+      <div class="steps" data-stagger="80">
+        <article class="step reveal">
+          <h3>Open or create</h3>
+          <p>Pick a PDF, scan paper with the camera, or build one from photos. QPdf only ever sees
+          the items you choose.</p>
+        </article>
+        <article class="step reveal">
+          <h3>Do the work</h3>
+          <p>Annotate, fill, sign, reorganise, OCR or redact. Every operation runs on your device,
+          with undo behind it.</p>
+        </article>
+        <article class="step reveal">
+          <h3>Save, print or share</h3>
+          <p>Write the file back where it came from, or hand it to your system print and share
+          sheet — only when you ask.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PLATFORMS ================= -->
+  <section class="section" id="platforms">
+    <div class="shell">
+      <div class="section-head reveal">
+        <p class="eyebrow">Everywhere you work</p>
+        <h2 class="h2">One codebase, six targets.</h2>
+        <p class="lede">QPdf is a single Flutter application that adapts to phone, tablet, desktop
+        and browser rather than shipping a cut-down mobile edition.</p>
+      </div>
+
+      <div class="platforms" data-stagger="55">
+        <div class="platform reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 10h12v7a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M8.5 10 7 6.5M15.5 10 17 6.5M9.5 7.5h.01M14.5 7.5h.01"/><path d="M4 12v4M20 12v4"/></svg>
+          <div><strong>Android</strong><span>Phone &amp; tablet</span></div>
+        </div>
+        <div class="platform reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 5.5h2"/></svg>
+          <div><strong>iPhone</strong><span>iOS</span></div>
+        </div>
+        <div class="platform reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2.5" width="16" height="19" rx="2"/><path d="M11 19h2"/></svg>
+          <div><strong>iPad</strong><span>iPadOS</span></div>
+        </div>
+        <div class="platform reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="1.6"/><path d="M2 19.5h20"/></svg>
+          <div><strong>macOS</strong><span>Apple silicon &amp; Intel</span></div>
+        </div>
+        <div class="platform reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5 11 5.5v6H4zM13 5.2 20 4v7.5h-7zM4 12.5h7v6L4 17.5zM13 12.5h7V20l-7-1.2z"/></svg>
+          <div><strong>Windows</strong><span>Desktop build</span></div>
+        </div>
+        <div class="platform reveal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>
+          <div><strong>Linux &amp; Web</strong><span>Desktop &amp; WebAssembly</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FAQ ================= -->
+  <section class="section section--soft" id="faq">
+    <div class="shell">
+      <div class="split">
+      <div class="section-head reveal">
+        <p class="eyebrow">Questions</p>
+        <h2 class="h2">The things people ask first.</h2>
+        <p class="lede">Everything here is also covered, in more detail and in plainer legal terms,
+        in the <a href="./privacy.html">privacy policy</a>.</p>
+      </div>
+
+      <div class="faq" data-stagger="50">
+        <details class="qa reveal">
+          <summary>Is QPdf really free?</summary>
+          <div class="qa-body">Yes. There is no subscription, no paid unlock and no watermark on
+          exported files. Features are not gated behind a tier.</div>
+        </details>
+        <details class="qa reveal">
+          <summary>Do my documents get uploaded anywhere?</summary>
+          <div class="qa-body">No. Rendering, search, annotation, editing, forms, signing, page
+          operations, scanning and OCR all run on your device. Document content is never sent to us
+          or to a third party.</div>
+        </details>
+        <details class="qa reveal">
+          <summary>Then why does OCR need the network?</summary>
+          <div class="qa-body">Only to fetch the text-recognition model the first time you use it —
+          roughly 21 MB over HTTPS, verified against a known SHA-256 checksum before use. Your
+          document is not part of that request, and recognition itself happens locally.</div>
+        </details>
+        <details class="qa reveal">
+          <summary>Do I need an account?</summary>
+          <div class="qa-body">No. There is no sign-up, no profile and no tracking identifier, so
+          there is nothing to log in to and nothing for us to hold about you.</div>
+        </details>
+        <details class="qa reveal">
+          <summary>Is the redaction tool safe to rely on?</summary>
+          <div class="qa-body">Secure redaction produces an image-only copy of the document and
+          removes searchable text, interactive content, metadata and existing signatures — rather
+          than drawing a black rectangle over text that can still be copied.</div>
+        </details>
+        <details class="qa reveal">
+          <summary>What happens to my edits if the app crashes?</summary>
+          <div class="qa-body">While you have unsaved changes, QPdf keeps a local recovery journal
+          so your work survives a crash or a force-quit. It is deleted as soon as you save, export
+          or discard those changes.</div>
+        </details>
+        <details class="qa reveal">
+          <summary>Which permissions does it ask for?</summary>
+          <div class="qa-body">Camera, only while you are scanning, and photos or files, only when
+          you pick something to open. Decline either one and the rest of the app keeps working.</div>
+        </details>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= GET ================= -->
+  <section class="section" id="get">
+    <div class="shell">
+      <div class="cta reveal">
+        <img src="./assets/qpdf-icon.webp" alt="QPdf app icon" width="68" height="68">
+        <h2 class="h2">Get QPdf</h2>
+        <p class="lede">Store releases for Google Play and the App Store are in preparation. Until
+        they land, the source and the current builds live on GitHub.</p>
+        <div class="cta-actions">
+          <a class="btn btn--primary" href="https://github.com/neupanegaurav/QPdf">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48l-.01-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.36 1.09 2.94.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85l-.01 2.75c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></svg>
+            Source &amp; builds on GitHub
+          </a>
+          <a class="btn btn--ghost" href="./privacy.html">Read the privacy policy</a>
+        </div>
+        <p class="lede" style="font-size:.86rem;margin-top:1.6rem">Android · iOS · iPadOS · macOS ·
+        Windows · Linux · Web</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="shell">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="./">
+          <img src="./assets/qpdf-icon.webp" alt="" width="34" height="34">
+          <span>QPdf<small>PDF reader &amp; editor</small></span>
+        </a>
+        <p>A free, local-first PDF workspace for phone, tablet, desktop and web. Your documents
+        stay with you.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#screens">Screens</a></li>
+          <li><a href="#platforms">Platforms</a></li>
+          <li><a href="#get">Get QPdf</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Trust</h4>
+        <ul>
+          <li><a href="./privacy.html">Privacy policy</a></li>
+          <li><a href="./THREAT_MODEL.md">Threat model</a></li>
+          <li><a href="./THIRD_PARTY_NOTICES.md">Third-party notices</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Project</h4>
+        <ul>
+          <li><a href="https://github.com/neupanegaurav/QPdf">Source code</a></li>
+          <li><a href="https://github.com/neupanegaurav/QPdf/issues">Support &amp; issues</a></li>
+          <li><a href="./BRANDING.md">Branding</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-base">
+      <span>© <span data-year>2026</span> QPdf</span>
+      <span>Built with Flutter</span>
+      <span>No cookies. No trackers. No third-party fonts.</span>
+    </div>
+  </div>
 </footer>
 
-</div>
+<script src="./assets/site.js" defer></script>
 </body>
 </html>
