@@ -134,7 +134,7 @@ abstract class AppLocalizations {
   /// **'Your documents stay with you — private and on-device.'**
   String get privacyFooter;
 
-  /// Primary Home action: fill forms and sign.
+  /// Primary Home action: type on a page and sign.
   ///
   /// In en, this message translates to:
   /// **'Fill & Sign'**
