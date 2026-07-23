@@ -376,6 +376,49 @@ Answer *None* to every content question. Expected result: **4+**.
 Connect will not ask per upload. This declares that QPdf uses only exempt
 cryptography (HTTPS and standard platform hash/signature algorithms).
 
+### Fields both stores demand that are easy to get caught out by
+
+None of these are in the copy above, and each one halts the form until it is
+answered.
+
+**Play — Store listing → Contact details.** A contact email is **mandatory**,
+and Play **publishes it on the public listing**. Decide deliberately whether to
+expose a personal address or set up an alias such as `qpdf@…`; the account's
+existing address is `gaurav.neupane.gn@gmail.com`, which is already public on
+the GitHub commits. Website and phone are optional — leave phone blank.
+
+**Apple — App Information.**
+
+| Field | Value |
+| --- | --- |
+| Primary category | Productivity |
+| Secondary category | leave empty (optional, and nothing fits well) |
+| Copyright | `2026 Gaurav Neupane` — year then holder, no `(c)` |
+| Content rights | contains no third-party content |
+
+**Apple — App Review Information.** Required before Submit for Review:
+
+| Field | Value |
+| --- | --- |
+| Sign-in required | **No** — QPdf has no account of any kind |
+| Demo account | not applicable, leave blank |
+| Contact first / last name, phone, email | **YOU** — a reachable phone number is mandatory and is not recorded anywhere in this repo |
+| Notes | see below |
+
+Review notes worth pasting, because two things about QPdf invite questions:
+
+```
+QPdf is a local-first PDF editor. No account or sign-in is required; every
+feature is available immediately on launch.
+
+Documents are never uploaded. The only outbound network request is an optional,
+user-initiated download of an on-device OCR model, verified against a pinned
+SHA-256. Page content is never attached to it.
+
+Camera and Photos access are used only in direct response to a user action
+(scanning a page, or building a PDF from images) and nothing is transmitted.
+```
+
 ---
 
 ## 10. What runs from the terminal once the two app records exist
