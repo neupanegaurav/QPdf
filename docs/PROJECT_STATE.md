@@ -28,7 +28,8 @@ state changed.
 | **Play Console app record** | **NOT created** | `publish_play.py check` → `404 Package not found` |
 | **App Store Connect app record** | **NOT created** | `publish_asc.py check` → no record for the bundle ID |
 | **iOS build ever archived/uploaded** | **No** | no full stable Xcode on the machine that has the source |
-| iPhone + iPad screenshots | **Not produced** | `store/screenshots/ios-ipad/` holds only a placeholder README |
+| iPhone + iPad screenshots | **Done** — 1 each, Home screen | iPhone 1320×2868 portrait, iPad 2752×2064 landscape, from the simulator |
+| macOS screenshot | **Done** — not part of this submission | 1280×800, `store/screenshots/macos/` |
 | macOS release build | **Works** — no longer blocked | built 2026-07-23 via `DEVELOPER_DIR`, executable relinked |
 | Android APK / AAB release | **Works** | 104 MiB APK, 186 MiB AAB, both rebuilt 2026-07-23 |
 | Web release (wasm) | **Works** | `main.dart.wasm` 5.4 MB, rebuilt 2026-07-23 |
@@ -139,26 +140,28 @@ which builds on Apple's stable infrastructure and needs neither Mac.
 
 ---
 
-## 3. Uncommitted work in progress
+## 3. Recent work and the current working tree
 
-`main` is level with `origin/main` at `c5be80b`, but the working tree is not
-clean. This is one coherent unfinished change:
+**Landed, but not yet pushed.** `main` is **2 commits ahead of `origin/main`**:
 
-**Replacing AcroForm form-filling with free-text "Type on page".**
+- `32e83b2` — drop AcroForm filling, trim the toolbar to 13 tools
+- `0e5986d` — drop form-filling claims from every shipping surface
+
+The AcroForm reasoning is in the code comment: field names are machine names
+that mean nothing to a reader, and a `/Btn` field owning several widgets stores
+a single value, so ticking one grouped checkbox necessarily clears its siblings.
+Free text behaves identically on tagged, flattened and scanned documents.
+
+**Uncommitted, from the 2026-07-23 build session** — the SPM → CocoaPods move
+described in §3a, plus new store assets:
 
 | File | Change |
 | --- | --- |
-| `lib/src/editor/editor_home.dart` | Toolbar tool set narrowed to an explicit list; "Fill form fields" entry removed |
-| `test/widget_test.dart` | Asserts "Fill form fields" is gone and "Type on page" arms `freeText` |
-| `lib/l10n/*.arb`, `lib/l10n/app_localizations*.dart` | String updates for the above |
-| `docs/DEVICE_TEST_PLAN.md` | Test plan updated to match |
-| `ios/Runner.xcworkspace/.../Package.resolved` | **Deleted** — decide whether that is intentional before committing |
-
-The reasoning is recorded in the code comment: AcroForm field names are machine
-names that mean nothing to a reader, and a `/Btn` field owning several widgets
-stores a single value, so ticking one grouped checkbox necessarily clears its
-siblings. Free text behaves identically on tagged, flattened and scanned
-documents. Tests pass with the change in place.
+| `ios/Podfile.lock` | +100 lines — 1 pod became 37 |
+| `ios/Runner.xcodeproj/project.pbxproj` | +36 lines — CocoaPods build phases restored |
+| `ios/**/swiftpm/Package.resolved` (×2) | Deleted — correct now, SPM is no longer used |
+| `store/graphics/`, `store/screenshots/**` | Feature graphic, icon, reshot Android sets |
+| `CLAUDE.md`, `docs/PROJECT_STATE.md` | This handoff pair, still untracked |
 
 ### Resolved — the copy was corrected in `0e5986d`
 
@@ -174,6 +177,52 @@ documents, so the copy leads with that rather than hiding it. The tablet
 screenshot `store/screenshots/android-tablet/03-fill-and-sign.png` shows the
 sheet the shipping binary actually presents — useful evidence if App Review ever
 queries the metadata.
+
+---
+
+## 3a. iOS builds use CocoaPods, not Swift Package Manager
+
+Found and fixed on 2026-07-23. **This affects Mac B and CI, not just Mac A** —
+it is a Flutter/plugin packaging problem, nothing to do with which Xcode is
+installed, so it reproduces anywhere until the setting below is in place.
+
+With `enable-swift-package-manager` on, `ios/Podfile.lock` carried a single pod
+(`onnxruntime`) and the other nine plugins resolved through SPM. Every
+ObjC-implemented plugin then failed to link while the pure-Swift ones succeeded,
+so `GeneratedPluginRegistrant.m` compiled against classes that were never built:
+
+```
+Unknown receiver 'FilePickerPlugin'; did you mean 'FileSaverPlugin'?
+Use of undeclared identifier 'IntegrationTestPlugin'
+Use of undeclared identifier 'PermissionHandlerPlugin'
+```
+
+The split was exact — `file_picker` (4 ObjC files), `permission_handler_apple`
+(20) and `integration_test` (3) all failed; `file_saver`, `printing`,
+`url_launcher_ios`, `shared_preferences_foundation`,
+`flutter_secure_storage_darwin` and `cunning_document_scanner` (0 ObjC files
+each) all linked. `integration_test` shows the packaging flaw plainly: its
+header sits at `Sources/integration_test/include/IntegrationTestPlugin.h`, but
+the registrant imports `<integration_test/IntegrationTestPlugin.h>`, which needs
+an `include/integration_test/` directory that does not exist.
+
+The fix, which must be set on every machine that builds iOS:
+
+```bash
+flutter config --no-enable-swift-package-manager
+rm -rf ios/Pods ios/.symlinks ios/Flutter/ephemeral ios/Podfile.lock
+flutter pub get && flutter build ios --simulator --debug
+```
+
+Note this is a **global** Flutter setting, not per-project — it changes every
+Flutter project on the machine. CocoaPods is Flutter's long-standing default, so
+that is normally a non-event, but it is worth knowing before it surprises you.
+
+**`ios/Podfile.lock` is the canary.** It must list ~37 pods. If it lists one,
+the project has drifted back onto SPM and iOS will fail exactly as above. Do not
+run `flutter clean` to fix an iOS problem — it deletes `build/`, taking the
+release APK, AAB, macOS app and web bundle with it; clear only the `ios/` paths
+listed above.
 
 ---
 
@@ -245,3 +294,32 @@ DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer \
 This unblocks macOS and simulator builds. It does **not** unblock App Store
 submission — a beta-Xcode archive is still rejected with `ITMS-90111`. Only
 Mac B clears that gate.
+
+Pair it with `PATH=$REPO/tool/xcode-beta-bin:$PATH` for anything that compiles
+Dart native assets: those hooks re-invoke a bare `xcrun`, which would otherwise
+drop back to the misconfigured `xcode-select` partway through the build.
+
+### What Mac A can and cannot build
+
+All six verified in one run on 2026-07-23, after the §3a CocoaPods fix:
+
+| Target | Command | Result |
+| --- | --- | --- |
+| macOS release | `flutter build macos --release` | 51s |
+| Android APK release | `flutter build apk --release` | 104 MiB |
+| Android AAB release | `flutter build appbundle --release` | 186 MiB |
+| Web release (wasm) | `flutter build web --release --wasm` | 5.4 MB wasm |
+| iOS simulator debug | `flutter build ios --simulator --debug` | 71s |
+| iOS device release | `flutter build ios --release --no-codesign` | 69s |
+
+**Windows and Linux cannot be built on any Mac.** Flutter desktop is
+host-native with no cross-compilation, so those two README targets need their
+own hosts or CI runners.
+
+The iOS device build is unsigned — it proves the code compiles for arm64
+hardware, but it cannot install on a device and is not an App Store artifact.
+Both Apple builds also ran with `QPDF_ALLOW_MISSING_DSYM=1`, because Xcode 27
+beta's `dsymutil` hangs on Flutter AOT binaries and `tool/xcode-beta-bin/xcrun`
+substitutes a stand-in Mach-O. **Those artifacts have no usable dSYMs** — do not
+ship them or feed them to a crash reporter. Mac B, on stable Xcode, never sets
+the flag and produces real symbol bundles.

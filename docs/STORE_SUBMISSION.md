@@ -24,7 +24,7 @@ browser and the account owner's login; nothing in an API can do them.
 | **App Store Connect app record** | **YOU** — §4 |
 | Privacy-policy page | Written — `docs/privacy.html`; needs a push + Pages switch, §5 |
 | Feature graphic + 512 icon | Done — `store/graphics/`, regenerate from `tool/feature_graphic.html` |
-| iOS simulator screenshots | Started — iPad 13" landscape captured; iPhone 6.9" outstanding, see §7 |
+| iOS simulator screenshots | Done — iPhone 6.9" portrait + iPad 13" landscape, see §7 |
 | iOS archive/upload | Blocked — needs full **stable** Xcode; a beta-Xcode archive is rejected `ITMS-90111` |
 
 Keystore backup is not optional. `apps/openpdf_studio/android/key.properties`
@@ -224,23 +224,30 @@ rather than the synthetic test-corpus fixture. Regenerate the document with
 Phones are portrait, tablets landscape. The feature graphic is regenerated from
 `tool/feature_graphic.html` with headless Chrome at exactly 1024 × 500.
 
-**iPad 13" is started, iPhone 6.9" is not.**
-`screenshots/ios-ipad/01-home.png` is a real 2752 × 2064 landscape capture from
-the iOS simulator build on an iPad Pro 13-inch (M5), status bar overridden to
-9:41. That meets Apple's one-screenshot minimum for the size.
+**Both iOS sizes now have a real capture**, taken on Mac A - the simulator
+build works here, so this no longer waits for Mac B.
 
-Two gaps remain. Neither needs Mac B — the simulator build works on Mac A now:
+| File | Size | Display type |
+| --- | --- | --- |
+| `screenshots/ios-iphone/01-home.png` | 1320 x 2868 portrait | `APP_IPHONE_67` |
+| `screenshots/ios-ipad/01-home.png` | 2752 x 2064 landscape | `APP_IPAD_PRO_3GEN_129` |
 
-- **More iPad frames.** `simctl` has no tap command, so `xcrun simctl launch`
-  only ever lands on Home. Driving further needs an Xcode UI test, `idb`, or
-  Accessibility permission for AppleScript.
-- **iPhone 6.9" (1290 × 2796 or 1320 × 2868).** An iPhone 17 Pro Max simulator
-  is available; install the same `Runner.app` and capture as above.
+Both have the status bar overridden to Apple's 9:41 and meet the
+one-screenshot-per-size minimum, so a submission is not blocked on them.
 
-Drop files in `store/screenshots/ios-iphone/` and `ios-ipad/` and
-`tool/publish_asc.py screenshots` picks them up by folder. Never ship a frame
-containing the "Apple Account Verification" alert — it carries a real email
-address; clear it by restarting SpringBoard on that simulator.
+They are Home-screen only, which undersells the app next to the Android sets.
+`simctl` has no tap command, so `xcrun simctl launch` cannot reach the document
+view or the Fill & Sign sheet; that needs an Xcode UI test, `idb`, or
+Accessibility permission for AppleScript. Plain AppleScript **hangs** on the
+permission prompt rather than failing, so do not script it blind.
+
+Never ship a frame containing the simulator's "Apple Account Verification"
+alert - it carries a real email address. Clear it with
+`xcrun simctl spawn <udid> launchctl kickstart -k system/com.apple.SpringBoard`.
+
+`store/screenshots/macos/` holds a 1280 x 800 desktop capture. It is **not**
+part of this submission - the App Store Connect record is iOS only and no Mac
+App Store record exists - and is kept for the marketing page.
 
 ---
 
