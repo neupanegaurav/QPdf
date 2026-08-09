@@ -293,8 +293,8 @@ First release.
 • Secure redaction and PDF/UA + PDF/A audits
 ```
 
-**Support URL**: `https://github.com/neupanegaurav/QPdf/issues`
-**Marketing URL**: `https://github.com/neupanegaurav/QPdf`
+**Support URL**: `https://neupanegaurav.github.io/QPdf/#support`
+**Marketing URL**: `https://neupanegaurav.github.io/QPdf/`
 
 ---
 
