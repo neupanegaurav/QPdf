@@ -49,6 +49,12 @@
 	<string>QPdf reads photos only when you pick images to turn into a PDF.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>QPdf saves an image back to your photo library only when you ask it to.</string>
+	<!-- QPdf never uses location. This key exists only because the bundled
+	     image-picker library links CoreLocation for photo geotagging, which
+	     Apple's binary scanner flags (ITMS-90683) even when the feature is
+	     never invoked. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>QPdf does not use your location. This permission is never requested.</string>
 	<!-- QPdf uses only standard, exempt cryptography (HTTPS and the platform's
 	     built-in hash/signature algorithms), so no non-exempt encryption is
 	     declared. This prevents every upload stalling on the manual export
