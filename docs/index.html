@@ -49,8 +49,15 @@
         <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       </button>
       <a class="btn btn--primary btn--sm" href="#get">Get QPdf</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="mobileNav" aria-label="Open menu">
+        <span></span><span></span>
+      </button>
     </div>
   </div>
+  <nav class="mobile-nav" id="mobileNav" aria-label="Mobile sections">
+    <a href="#toolkit">Toolkit</a><a href="#privacy">Privacy</a><a href="#screens">Screens</a>
+    <a href="#faq">FAQ</a><a href="#support">Support</a><a href="./privacy.html">Privacy policy</a>
+  </nav>
 </header>
 
 <main id="main">
@@ -77,10 +84,17 @@
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"/></svg>Open source</li>
         </ul>
       </div>
-      <div class="stage reveal">
+      <div class="stage reveal" data-tilt>
+        <div class="stage-orbit stage-orbit--one"></div>
+        <div class="stage-orbit stage-orbit--two"></div>
+        <div class="tablet-shell" aria-hidden="true">
+          <img src="./assets/shots/tablet-tools.webp" alt="">
+        </div>
         <div class="device-shell">
           <img src="./assets/shots/phone-home.webp" alt="QPdf home screen with Fill & Sign highlighted and Open PDF, Scan, Photos and Combine tiles below.">
         </div>
+        <span class="stage-label stage-label--top">100% on-device</span>
+        <span class="stage-label stage-label--bottom">No sign-in</span>
       </div>
     </div>
   </section>
@@ -95,38 +109,38 @@
         <p class="lede">Nothing here is gated behind a tier. Scan it, edit it, sign it &mdash; the whole toolkit ships free.</p>
       </div>
 
-      <div class="toolkit">
-        <div class="tool-row reveal">
+      <div class="toolkit feature-deck">
+        <div class="tool-row feature-card feature-card--blue reveal" data-mark="01" data-tilt>
           <span class="idx">01</span>
           <h3>Read &amp; search</h3>
           <div><p>Search, select and navigate even large documents with thumbnails, bookmarks and an outline view.</p>
           <div class="tool-tags"><span>Text selection</span><span>Search</span><span>Thumbnails</span><span>Outline</span></div></div>
         </div>
-        <div class="tool-row reveal">
+        <div class="tool-row feature-card feature-card--violet reveal" data-mark="02" data-tilt>
           <span class="idx">02</span>
           <h3>Fill &amp; sign</h3>
           <div><p>Complete AcroForms and add a drawn or cryptographic digital signature, with byte-range verification.</p>
           <div class="tool-tags"><span>AcroForms</span><span>Drawn signature</span><span>Digital signature</span></div></div>
         </div>
-        <div class="tool-row reveal">
+        <div class="tool-row feature-card feature-card--coral reveal" data-mark="03" data-tilt>
           <span class="idx">03</span>
-          <h3>Annotate &amp; organise</h3>
+          <h3>Annotate &amp; organize pages</h3>
           <div><p>Highlight, draw and place text, then merge, reorder, rotate and extract pages.</p>
           <div class="tool-tags"><span>Markup</span><span>Merge</span><span>Reorder</span><span>Extract</span></div></div>
         </div>
-        <div class="tool-row reveal">
+        <div class="tool-row feature-card feature-card--sky reveal" data-mark="04" data-tilt>
           <span class="idx">04</span>
           <h3>Scan &amp; on-device OCR</h3>
           <div><p>Turn paper or photos into a clean PDF, then make it searchable &mdash; without a page ever leaving the device.</p>
           <div class="tool-tags"><span>Camera scan</span><span>Searchable text layer</span><span>No uploads</span></div></div>
         </div>
-        <div class="tool-row reveal">
+        <div class="tool-row feature-card feature-card--ink reveal" data-mark="05" data-tilt>
           <span class="idx">05</span>
           <h3>Redaction that actually redacts</h3>
           <div><p>Removes sensitive content with an image-only rewrite &mdash; not a black rectangle sitting over copyable text.</p>
           <div class="tool-tags"><span>Image flattening</span><span>Metadata stripped</span></div></div>
         </div>
-        <div class="tool-row reveal">
+        <div class="tool-row feature-card feature-card--lime reveal" data-mark="06" data-tilt>
           <span class="idx">06</span>
           <h3>Standards &amp; document hygiene</h3>
           <div><p>Audit against PDF/UA and PDF/A, compare revisions, optimise file size and remove hidden metadata.</p>
@@ -170,6 +184,11 @@
       </div>
 
       <div class="rail-wrap reveal">
+        <div class="rail-controls" aria-label="Screenshot carousel controls">
+          <button class="rail-arrow" type="button" data-rail-prev aria-label="Previous screenshot">&larr;</button>
+          <span><b id="railCurrent">01</b> / 04</span>
+          <button class="rail-arrow" type="button" data-rail-next aria-label="Next screenshot">&rarr;</button>
+        </div>
         <div class="rail" id="rail">
           <div class="rail-card">
             <div class="shot"><img src="./assets/shots/phone-home.webp" alt="QPdf home screen with Fill & Sign highlighted."></div>
@@ -203,7 +222,7 @@
       <h2 class="statement display reveal" style="max-width:20ch">OPEN. WORK. SAVE. THAT'S THE WHOLE LOOP.</h2>
       <div class="steps">
         <div class="step reveal"><span class="num">01</span><h3>Open or create</h3><p>Pick a file, scan paper, or use photos.</p></div>
-        <div class="step reveal"><span class="num">02</span><h3>Do the work</h3><p>Annotate, sign, organise, OCR or redact.</p></div>
+        <div class="step reveal"><span class="num">02</span><h3>Do the work</h3><p>Annotate, sign, organize, OCR or redact.</p></div>
         <div class="step reveal"><span class="num">03</span><h3>Save, print or share</h3><p>Back to your device, your printer, or your apps.</p></div>
       </div>
     </div>
