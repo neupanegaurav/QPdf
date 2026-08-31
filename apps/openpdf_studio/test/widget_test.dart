@@ -93,6 +93,102 @@ void main() {
     expect(find.text('2 pages  •  PDF 1.7'), findsOneWidget);
   });
 
+  testWidgets('All tools is searchable and grouped by workflow', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final source = PdfDocumentSource(
+      id: 'tools-document',
+      displayName: 'Tools.pdf',
+      bytes: PdfBlankDocument.create(),
+    );
+    await tester.pumpWidget(
+      QPdfApp(
+        engine: _FakeEngine(),
+        fileService: _FakeFileService(source),
+        recoveryService: const NoopDocumentRecoveryService(),
+      ),
+    );
+
+    await tester.tap(find.text('Open PDF'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.byKey(const Key('document-tools-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('All tools'), findsOneWidget);
+    expect(find.text('Output'), findsOneWidget);
+    expect(find.text('Protect'), findsOneWidget);
+    expect(find.text('Make text searchable (OCR)'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('document-tools-search')),
+      'accessibility',
+    );
+    await tester.pump();
+
+    expect(find.text('Standards audit'), findsOneWidget);
+    expect(find.text('Optimize PDF'), findsNothing);
+  });
+
+  testWidgets('desktop tabs keep independent document controllers', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1400, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final first = PdfDocumentSource(
+      id: 'first-tab',
+      displayName: 'First.pdf',
+      bytes: PdfBlankDocument.create(),
+    );
+    final second = PdfDocumentSource(
+      id: 'second-tab',
+      displayName: 'Second.pdf',
+      bytes: PdfBlankDocument.create(pageCount: 2),
+    );
+    final files = _FakeFileService(first);
+    await tester.pumpWidget(
+      QPdfApp(
+        engine: _FakeEngine(),
+        fileService: files,
+        recoveryService: const NoopDocumentRecoveryService(),
+      ),
+    );
+
+    await tester.tap(find.text('Open PDF'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    final firstController = tester
+        .widget<PdfEditorView>(find.byType(PdfEditorView))
+        .controller;
+
+    files.source = second;
+    await tester.tap(find.byKey(const Key('open-pdf-button')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byKey(const Key('document-tab-strip')), findsOneWidget);
+    expect(find.byKey(const Key('document-tab-0')), findsOneWidget);
+    expect(find.byKey(const Key('document-tab-1')), findsOneWidget);
+    expect(
+      tester.widget<PdfEditorView>(find.byType(PdfEditorView)).controller,
+      isNot(same(firstController)),
+    );
+
+    await tester.tap(find.byKey(const Key('document-tab-0')));
+    await tester.pump();
+    expect(
+      tester.widget<PdfEditorView>(find.byType(PdfEditorView)).controller,
+      same(firstController),
+    );
+
+    await tester.tap(find.byKey(const Key('close-document-tab-1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('document-tab-strip')), findsNothing);
+    expect(find.text('First.pdf'), findsOneWidget);
+  });
+
   testWidgets('Fill & Sign is prominent from home and inside the editor', (
     tester,
   ) async {
@@ -396,7 +492,7 @@ final class _FakeRecoveryService implements DocumentRecoveryService {
 final class _FakeFileService implements DocumentFileService {
   _FakeFileService([this.source, this.savePath]);
 
-  final PdfDocumentSource? source;
+  PdfDocumentSource? source;
   final String? savePath;
   int saveCalls = 0;
 

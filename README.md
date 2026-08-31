@@ -34,6 +34,10 @@ The task-dashboard direction and feature comparison with the user's
 Stirling-PDF reference are recorded in
 [docs/STIRLING_BENCHMARK.md](docs/STIRLING_BENCHMARK.md).
 
+The post-Phase-3 plan for turning QPdf into a practical Adobe Acrobat
+replacement, ordered by common workflows and adaptive layout changes, is in
+[docs/ACROBAT_REPLACEMENT_ROADMAP.md](docs/ACROBAT_REPLACEMENT_ROADMAP.md).
+
 The generated compatibility corpus and verification commands are documented in [test_corpus/README.md](test_corpus/README.md).
 
 Current device-test artifacts and platform-specific signing status are recorded

@@ -24,6 +24,8 @@ import '../services/pdf_rewrite_service.dart';
 import '../services/pdf_external_modification_exception.dart';
 import '../services/recent_documents_service.dart';
 import '../services/secure_redaction_service.dart';
+import 'document_commands.dart';
+import 'document_tools_panel.dart';
 
 final _qpdfEditorTools = Set<PdfEditTool>.unmodifiable(
   PdfEditTool.values.where((tool) => tool != PdfEditTool.redact),
@@ -50,14 +52,44 @@ class EditorHome extends StatefulWidget {
 }
 
 class _EditorHomeState extends State<EditorHome> {
-  PdfOpenedDocument? _document;
+  static const _maximumOpenDocuments = 8;
+
+  final List<_DocumentSession> _sessions = [];
+  int _activeSessionIndex = -1;
   bool _busy = false;
-  bool _modified = false;
   String? _busyMessage;
-  String _documentPassword = '';
-  PdfDocumentSource? _recoveryBaseSource;
-  PdfEditingController? _editingController;
   List<RecentDocument> _recentDocuments = const [];
+
+  _DocumentSession? get _activeSession =>
+      _activeSessionIndex >= 0 && _activeSessionIndex < _sessions.length
+      ? _sessions[_activeSessionIndex]
+      : null;
+
+  PdfOpenedDocument? get _document => _activeSession?.document;
+  set _document(PdfOpenedDocument? value) {
+    if (value != null) _activeSession?.document = value;
+  }
+
+  bool get _modified => _activeSession?.modified ?? false;
+  set _modified(bool value) {
+    _activeSession?.modified = value;
+  }
+
+  String get _documentPassword => _activeSession?.password ?? '';
+  set _documentPassword(String value) {
+    _activeSession?.password = value;
+  }
+
+  PdfDocumentSource? get _recoveryBaseSource =>
+      _activeSession?.recoveryBaseSource;
+  set _recoveryBaseSource(PdfDocumentSource? value) {
+    if (value != null) _activeSession?.recoveryBaseSource = value;
+  }
+
+  PdfEditingController? get _editingController => _activeSession?.controller;
+  set _editingController(PdfEditingController? value) {
+    if (value != null) _activeSession?.controller = value;
+  }
 
   @override
   void initState() {
@@ -83,7 +115,6 @@ class _EditorHomeState extends State<EditorHome> {
   }
 
   Future<void> _openIncomingDocument(PdfDocumentSource source) async {
-    if (!await _canLeaveCurrentDocument()) return;
     await _openProvidedDocument(source);
   }
 
@@ -93,8 +124,11 @@ class _EditorHomeState extends State<EditorHome> {
     try {
       final prepared = await _prepareRecovery(source);
       if (prepared == null || !mounted) return;
-      _recoveryBaseSource = source;
-      if (await _openSource(prepared)) {
+      if (await _openSource(
+        prepared,
+        openInNewTab: true,
+        recoveryBaseSource: source,
+      )) {
         await widget.recentDocumentsService.remember(source);
         await _loadRecentDocuments();
       }
@@ -111,15 +145,17 @@ class _EditorHomeState extends State<EditorHome> {
   }
 
   Future<void> _openDocument({PdfEditTool? startTool}) async {
-    if (!await _canLeaveCurrentDocument()) return;
     setState(() => _busy = true);
     try {
       final source = await widget.fileService.pickPdf();
       if (source == null || !mounted) return;
       final prepared = await _prepareRecovery(source);
       if (prepared == null || !mounted) return;
-      _recoveryBaseSource = source;
-      if (await _openSource(prepared)) {
+      if (await _openSource(
+        prepared,
+        openInNewTab: true,
+        recoveryBaseSource: source,
+      )) {
         if (startTool != null) _editingController?.tool = startTool;
         await widget.recentDocumentsService.remember(source);
         await _loadRecentDocuments();
@@ -132,7 +168,6 @@ class _EditorHomeState extends State<EditorHome> {
   }
 
   Future<void> _openRecent(RecentDocument recent) async {
-    if (!await _canLeaveCurrentDocument()) return;
     setState(() => _busy = true);
     try {
       final source = await widget.fileService.openRecent(
@@ -149,8 +184,11 @@ class _EditorHomeState extends State<EditorHome> {
       }
       final prepared = await _prepareRecovery(source);
       if (prepared == null || !mounted) return;
-      _recoveryBaseSource = source;
-      if (await _openSource(prepared)) {
+      if (await _openSource(
+        prepared,
+        openInNewTab: true,
+        recoveryBaseSource: source,
+      )) {
         await widget.recentDocumentsService.remember(source);
         await _loadRecentDocuments();
       }
@@ -162,7 +200,6 @@ class _EditorHomeState extends State<EditorHome> {
   }
 
   Future<void> _createFromImages() async {
-    if (!await _canLeaveCurrentDocument()) return;
     setState(() => _busy = true);
     try {
       final images = await widget.fileService.pickImages();
@@ -173,8 +210,12 @@ class _EditorHomeState extends State<EditorHome> {
         displayName: 'Images.pdf',
         bytes: bytes,
       );
-      _recoveryBaseSource = source;
-      if (await _openSource(source) && mounted) {
+      if (await _openSource(
+            source,
+            openInNewTab: true,
+            recoveryBaseSource: source,
+          ) &&
+          mounted) {
         setState(() => _modified = true);
       }
     } catch (error) {
@@ -185,7 +226,6 @@ class _EditorHomeState extends State<EditorHome> {
   }
 
   Future<void> _mergePdfs() async {
-    if (!await _canLeaveCurrentDocument()) return;
     setState(() => _busy = true);
     try {
       final sources = await widget.fileService.pickPdfs();
@@ -199,8 +239,12 @@ class _EditorHomeState extends State<EditorHome> {
         displayName: 'Merged.pdf',
         bytes: bytes,
       );
-      _recoveryBaseSource = source;
-      if (await _openSource(source) && mounted) {
+      if (await _openSource(
+            source,
+            openInNewTab: true,
+            recoveryBaseSource: source,
+          ) &&
+          mounted) {
         setState(() => _modified = true);
       }
     } catch (error) {
@@ -211,7 +255,6 @@ class _EditorHomeState extends State<EditorHome> {
   }
 
   Future<void> _scanDocument() async {
-    if (!await _canLeaveCurrentDocument()) return;
     setState(() => _busy = true);
     try {
       final pages = await scanDocumentPages();
@@ -222,8 +265,12 @@ class _EditorHomeState extends State<EditorHome> {
         displayName: 'Scan.pdf',
         bytes: bytes,
       );
-      _recoveryBaseSource = source;
-      if (await _openSource(source) && mounted) {
+      if (await _openSource(
+            source,
+            openInNewTab: true,
+            recoveryBaseSource: source,
+          ) &&
+          mounted) {
         setState(() => _modified = true);
       }
     } catch (error) {
@@ -285,7 +332,27 @@ class _EditorHomeState extends State<EditorHome> {
   Future<bool> _openSource(
     PdfDocumentSource source, {
     String password = '',
+    bool openInNewTab = false,
+    PdfDocumentSource? recoveryBaseSource,
   }) async {
+    if (openInNewTab) {
+      final existing = _sessions.indexWhere(
+        (session) => session.document.source.id == source.id,
+      );
+      if (existing >= 0) {
+        if (mounted) setState(() => _activeSessionIndex = existing);
+        return true;
+      }
+      if (_sessions.length >= _maximumOpenDocuments) {
+        _showError(
+          StateError(
+            'Close a document before opening another. QPdf keeps up to '
+            '$_maximumOpenDocuments documents open to limit memory use.',
+          ),
+        );
+        return false;
+      }
+    }
     try {
       final opened = await widget.engine.open(source, password: password);
       final editingController = PdfEditingController(
@@ -297,18 +364,37 @@ class _EditorHomeState extends State<EditorHome> {
         return false;
       }
       setState(() {
-        _editingController?.dispose();
-        _editingController = editingController;
-        _document = opened;
-        _documentPassword = password;
-        _modified = false;
+        if (openInNewTab || _activeSession == null) {
+          _sessions.add(
+            _DocumentSession(
+              document: opened,
+              controller: editingController,
+              password: password,
+              recoveryBaseSource: recoveryBaseSource ?? source,
+            ),
+          );
+          _activeSessionIndex = _sessions.length - 1;
+        } else {
+          final session = _activeSession!;
+          session.controller.dispose();
+          session
+            ..controller = editingController
+            ..document = opened
+            ..password = password
+            ..modified = false;
+        }
       });
       return true;
     } on PdfPasswordRequiredException {
       if (!mounted) return false;
       final entered = await _askForPassword();
       if (entered != null && mounted) {
-        return _openSource(source, password: entered);
+        return _openSource(
+          source,
+          password: entered,
+          openInNewTab: openInNewTab,
+          recoveryBaseSource: recoveryBaseSource,
+        );
       }
       return false;
     }
@@ -460,12 +546,40 @@ class _EditorHomeState extends State<EditorHome> {
   Future<void> _closeDocument() async {
     if (!await _canLeaveCurrentDocument() || !mounted) return;
     setState(() {
-      _editingController?.dispose();
-      _editingController = null;
-      _document = null;
-      _recoveryBaseSource = null;
-      _documentPassword = '';
-      _modified = false;
+      final removed = _sessions.removeAt(_activeSessionIndex);
+      removed.controller.dispose();
+      if (_sessions.isEmpty) {
+        _activeSessionIndex = -1;
+      } else if (_activeSessionIndex >= _sessions.length) {
+        _activeSessionIndex = _sessions.length - 1;
+      }
+    });
+  }
+
+  void _switchToSession(int index) {
+    if (_busy || index == _activeSessionIndex) return;
+    setState(() => _activeSessionIndex = index);
+  }
+
+  Future<void> _closeSession(int index) async {
+    if (_busy || index < 0 || index >= _sessions.length) return;
+    final previous = _activeSessionIndex;
+    if (index != previous) setState(() => _activeSessionIndex = index);
+    if (!await _canLeaveCurrentDocument() || !mounted) {
+      if (mounted && previous < _sessions.length) {
+        setState(() => _activeSessionIndex = previous);
+      }
+      return;
+    }
+    setState(() {
+      final removed = _sessions.removeAt(index);
+      removed.controller.dispose();
+      if (_sessions.isEmpty) {
+        _activeSessionIndex = -1;
+      } else {
+        final adjustedPrevious = previous > index ? previous - 1 : previous;
+        _activeSessionIndex = adjustedPrevious.clamp(0, _sessions.length - 1);
+      }
     });
   }
 
@@ -1923,6 +2037,88 @@ class _EditorHomeState extends State<EditorHome> {
     unawaited(_printDocument(editing.bytes));
   }
 
+  void _allToolsShortcut() {
+    final editing = _editingController;
+    if (_busy || _document == null || editing == null) return;
+    unawaited(_showDocumentTools(editing));
+  }
+
+  void _closeTabShortcut() {
+    if (_busy || _activeSession == null) return;
+    unawaited(_closeDocument());
+  }
+
+  void _nextTabShortcut({required bool reverse}) {
+    if (_busy || _sessions.length < 2) return;
+    final delta = reverse ? -1 : 1;
+    final next = (_activeSessionIndex + delta) % _sessions.length;
+    setState(() => _activeSessionIndex = next);
+  }
+
+  void _runDocumentCommand(
+    DocumentCommandId command,
+    PdfEditingController editing,
+  ) {
+    switch (command) {
+      case DocumentCommandId.print:
+        unawaited(_printDocument(editing.bytes));
+      case DocumentCommandId.share:
+        unawaited(_shareDocument(editing.bytes));
+      case DocumentCommandId.pageNumbers:
+        unawaited(_addPageNumbers(editing));
+      case DocumentCommandId.watermark:
+        unawaited(_addWatermark(editing));
+      case DocumentCommandId.bates:
+        unawaited(_addBatesNumbers(editing));
+      case DocumentCommandId.metadata:
+        unawaited(_editMetadata(editing));
+      case DocumentCommandId.compare:
+        unawaited(_compareWithPdf(editing));
+      case DocumentCommandId.ocr:
+        unawaited(_runOfflineOcr(editing));
+      case DocumentCommandId.audit:
+        unawaited(_auditDocument(editing));
+      case DocumentCommandId.security:
+        unawaited(_showSecurityReport(editing));
+      case DocumentCommandId.optimize:
+        unawaited(_optimizeDocument(editing));
+      case DocumentCommandId.scrubMetadata:
+        unawaited(_scrubMetadata(editing));
+      case DocumentCommandId.pdfa:
+        unawaited(_convertToPdfA(editing));
+      case DocumentCommandId.digitalSignature:
+        unawaited(_addDigitalSignature(editing));
+      case DocumentCommandId.verifySignatures:
+        unawaited(_verifyDigitalSignatures(editing));
+    }
+  }
+
+  Future<void> _showDocumentTools(PdfEditingController editing) async {
+    final wide = MediaQuery.sizeOf(context).width >= 700;
+    if (wide) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => Dialog(
+          child: DocumentToolsPanel(
+            onSelected: (command) => _runDocumentCommand(command, editing),
+          ),
+        ),
+      );
+      return;
+    }
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) => FractionallySizedBox(
+        heightFactor: 0.92,
+        child: DocumentToolsPanel(
+          onSelected: (command) => _runDocumentCommand(command, editing),
+        ),
+      ),
+    );
+  }
+
   /// Desktop accelerators. Each action is bound under both Control (Windows and
   /// Linux) and Meta/Command (macOS). Modifier combinations never carry text,
   /// so a focused text field still receives normal typing.
@@ -1941,6 +2137,27 @@ class _EditorHomeState extends State<EditorHome> {
     bind(LogicalKeyboardKey.keyS, _saveShortcut);
     bind(LogicalKeyboardKey.keyS, _saveAsShortcut, shift: true);
     bind(LogicalKeyboardKey.keyP, _printShortcut);
+    bind(LogicalKeyboardKey.keyK, _allToolsShortcut);
+    bind(LogicalKeyboardKey.keyW, _closeTabShortcut);
+    bindings[const SingleActivator(
+      LogicalKeyboardKey.tab,
+      control: true,
+    )] = () =>
+        _nextTabShortcut(reverse: false);
+    bindings[const SingleActivator(
+      LogicalKeyboardKey.tab,
+      control: true,
+      shift: true,
+    )] = () =>
+        _nextTabShortcut(reverse: true);
+    bindings[const SingleActivator(LogicalKeyboardKey.tab, meta: true)] = () =>
+        _nextTabShortcut(reverse: false);
+    bindings[const SingleActivator(
+      LogicalKeyboardKey.tab,
+      meta: true,
+      shift: true,
+    )] = () =>
+        _nextTabShortcut(reverse: true);
     return bindings;
   }
 
@@ -1954,313 +2171,190 @@ class _EditorHomeState extends State<EditorHome> {
         child: Scaffold(
           appBar: AppBar(
             titleSpacing: 20,
-        title: Row(
-          children: [
-            const Icon(Icons.picture_as_pdf_outlined),
-            const SizedBox(width: 10),
-            Flexible(
-              child: Text(
-                document == null
-                    ? 'QPdf'
-                    : '${document.source.displayName}${_modified ? ' *' : ''}',
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          if (document != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Center(
-                child: Text(
-                  '${document.summary.pageCount} pages  •  PDF ${document.summary.pdfVersion}',
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-              ),
-            ),
-          if (document != null)
-            IconButton(
-              key: const Key('close-document-button'),
-              tooltip: 'Close document',
-              onPressed: _busy ? null : _closeDocument,
-              icon: const Icon(Icons.close),
-            ),
-          if (_editingController case final editing?)
-            ListenableBuilder(
-              listenable: editing,
-              builder: (context, _) => Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    key: const Key('secure-redaction-tool-button'),
-                    tooltip: 'Mark secure redaction',
-                    onPressed: _busy
-                        ? null
-                        : () => editing.tool = PdfEditTool.redact,
-                    icon: const Icon(Icons.gradient),
+            title: Row(
+              children: [
+                const Icon(Icons.picture_as_pdf_outlined),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    document == null
+                        ? 'QPdf'
+                        : '${document.source.displayName}${_modified ? ' *' : ''}',
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  if (editing.hasRedactionMarks)
-                    IconButton.filledTonal(
-                      key: const Key('secure-redaction-apply-button'),
-                      tooltip: 'Apply secure redactions',
-                      onPressed: _busy
-                          ? null
-                          : () => unawaited(_applySecureRedactions(editing)),
-                      icon: const Icon(Icons.security),
-                    ),
-                ],
-              ),
-            ),
-          IconButton(
-            key: const Key('open-pdf-button'),
-            tooltip: 'Open PDF',
-            onPressed: _busy ? null : _openDocument,
-            icon: const Icon(Icons.folder_open_outlined),
-          ),
-          IconButton(
-            tooltip: 'About QPdf',
-            onPressed: () => showAboutDialog(
-              context: context,
-              applicationName: 'QPdf',
-              applicationVersion: '0.1.0 (1)',
-              applicationLegalese:
-                  'Copyright © 2026 Gaurav Studios. Documents stay local '
-                  'unless you choose to share them.',
-              children: const [
-                SizedBox(height: 12),
-                Text(
-                  'Cross-platform PDF reading, editing, forms, page tools, '
-                  'scanning, private OCR, and guarded on-device form intelligence.',
                 ),
               ],
             ),
-            icon: const Icon(Icons.info_outline),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Stack(
-        children: [
-          if (document == null)
-            _EmptyState(
-              onOpen: _busy ? null : _openDocument,
-              onFillAndSign: _busy
-                  ? null
-                  : () => _openDocument(startTool: PdfEditTool.select),
-              onCreateFromImages: _busy ? null : _createFromImages,
-              onMergePdfs: _busy ? null : _mergePdfs,
-              onScanDocument: _busy || !isDocumentScannerSupported
-                  ? null
-                  : _scanDocument,
-              recentDocuments: _recentDocuments,
-              onOpenRecent: _busy ? null : _openRecent,
-            )
-          else
-            PdfEditorView(
-              key: ValueKey(
-                '${document.source.id}-${identityHashCode(_editingController)}',
+            actions: [
+              if (document != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Center(
+                    child: Text(
+                      '${document.summary.pageCount} pages  •  PDF ${document.summary.pdfVersion}',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ),
+                ),
+              if (document != null)
+                IconButton(
+                  key: const Key('close-document-button'),
+                  tooltip: 'Close document',
+                  onPressed: _busy ? null : _closeDocument,
+                  icon: const Icon(Icons.close),
+                ),
+              if (_editingController case final editing?)
+                ListenableBuilder(
+                  listenable: editing,
+                  builder: (context, _) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        key: const Key('secure-redaction-tool-button'),
+                        tooltip: 'Mark secure redaction',
+                        onPressed: _busy
+                            ? null
+                            : () => editing.tool = PdfEditTool.redact,
+                        icon: const Icon(Icons.gradient),
+                      ),
+                      if (editing.hasRedactionMarks)
+                        IconButton.filledTonal(
+                          key: const Key('secure-redaction-apply-button'),
+                          tooltip: 'Apply secure redactions',
+                          onPressed: _busy
+                              ? null
+                              : () =>
+                                    unawaited(_applySecureRedactions(editing)),
+                          icon: const Icon(Icons.security),
+                        ),
+                    ],
+                  ),
+                ),
+              if (_editingController case final editing?)
+                IconButton(
+                  key: const Key('document-tools-button'),
+                  tooltip: 'All tools (⌘/Ctrl+K)',
+                  onPressed: _busy
+                      ? null
+                      : () => unawaited(_showDocumentTools(editing)),
+                  icon: const Icon(Icons.apps_outlined),
+                ),
+              IconButton(
+                key: const Key('open-pdf-button'),
+                tooltip: 'Open PDF',
+                onPressed: _busy ? null : _openDocument,
+                icon: const Icon(Icons.folder_open_outlined),
               ),
-              controller: _editingController,
-              documentId: document.source.id,
-              features: PdfEditorFeatures(tools: _qpdfEditorTools),
-              onSave: (bytes) => unawaited(_save(bytes)),
-              onSaveAs: (bytes) => unawaited(_saveAs(bytes)),
-              showSaveButton: false,
-              onDocumentChanged: (bytes) {
-                final recoveryBase = _recoveryBaseSource;
-                if (recoveryBase != null) {
-                  widget.recoveryService.schedule(recoveryBase, bytes);
-                }
-                if (!_modified && mounted) setState(() => _modified = true);
-              },
-              onPickPdfToInsert: _pickBytes,
-              onExportPages: _saveExportedPages,
-              toolbarLeading: [
-                (context, editing, viewer) => FilledButton.icon(
-                  key: const Key('fill-and-sign-toolbar-button'),
-                  onPressed: () => unawaited(_showFillAndSign(editing)),
-                  icon: const Icon(Icons.draw_outlined),
-                  label: const Text('Fill & Sign'),
-                ),
-              ],
-              toolbarTrailing: [
-                (context, editing, viewer) => FilledButton.icon(
-                  onPressed: _modified
-                      ? () => unawaited(_save(editing.bytes))
-                      : null,
-                  icon: const Icon(Icons.save_alt),
-                  label: const Text('Save'),
-                ),
-                (context, editing, viewer) => PopupMenuButton<String>(
-                  tooltip: 'Document actions',
-                  icon: const Icon(Icons.more_vert),
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'print':
-                        unawaited(_printDocument(editing.bytes));
-                      case 'share':
-                        unawaited(_shareDocument(editing.bytes));
-                      case 'pageNumbers':
-                        unawaited(_addPageNumbers(editing));
-                      case 'watermark':
-                        unawaited(_addWatermark(editing));
-                      case 'bates':
-                        unawaited(_addBatesNumbers(editing));
-                      case 'metadata':
-                        unawaited(_editMetadata(editing));
-                      case 'compare':
-                        unawaited(_compareWithPdf(editing));
-                      case 'ocr':
-                        unawaited(_runOfflineOcr(editing));
-                      case 'audit':
-                        unawaited(_auditDocument(editing));
-                      case 'security':
-                        unawaited(_showSecurityReport(editing));
-                      case 'optimize':
-                        unawaited(_optimizeDocument(editing));
-                      case 'scrubMetadata':
-                        unawaited(_scrubMetadata(editing));
-                      case 'pdfa':
-                        unawaited(_convertToPdfA(editing));
-                      case 'digitalSignature':
-                        unawaited(_addDigitalSignature(editing));
-                      case 'verifySignatures':
-                        unawaited(_verifyDigitalSignatures(editing));
-                    }
-                  },
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                      value: 'print',
-                      child: ListTile(
-                        leading: Icon(Icons.print_outlined),
-                        title: Text('Print'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'ocr',
-                      child: ListTile(
-                        leading: Icon(Icons.document_scanner_outlined),
-                        title: Text('Make text searchable (OCR)'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'share',
-                      child: ListTile(
-                        leading: Icon(Icons.share_outlined),
-                        title: Text('Share PDF'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'pageNumbers',
-                      child: ListTile(
-                        leading: Icon(Icons.format_list_numbered),
-                        title: Text('Add page numbers'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'watermark',
-                      child: ListTile(
-                        leading: Icon(Icons.branding_watermark_outlined),
-                        title: Text('Add watermark'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'bates',
-                      child: ListTile(
-                        leading: Icon(Icons.numbers_outlined),
-                        title: Text('Add Bates numbers'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'metadata',
-                      child: ListTile(
-                        leading: Icon(Icons.info_outline),
-                        title: Text('Document information'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'compare',
-                      child: ListTile(
-                        leading: Icon(Icons.compare_outlined),
-                        title: Text('Compare with PDF'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'audit',
-                      child: ListTile(
-                        leading: Icon(Icons.fact_check_outlined),
-                        title: Text('Standards audit'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'security',
-                      child: ListTile(
-                        leading: Icon(Icons.shield_outlined),
-                        title: Text('Security & permissions'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'optimize',
-                      child: ListTile(
-                        leading: Icon(Icons.compress_outlined),
-                        title: Text('Optimize PDF'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'scrubMetadata',
-                      child: ListTile(
-                        leading: Icon(Icons.cleaning_services_outlined),
-                        title: Text('Remove hidden metadata'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'pdfa',
-                      child: ListTile(
-                        leading: Icon(Icons.inventory_2_outlined),
-                        title: Text('Convert to PDF/A'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'digitalSignature',
-                      child: ListTile(
-                        leading: Icon(Icons.verified_user_outlined),
-                        title: Text('Digital signature'),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'verifySignatures',
-                      child: ListTile(
-                        leading: Icon(Icons.verified_outlined),
-                        title: Text('Verify signatures'),
-                      ),
+              IconButton(
+                tooltip: 'About QPdf',
+                onPressed: () => showAboutDialog(
+                  context: context,
+                  applicationName: 'QPdf',
+                  applicationVersion: '0.1.0 (1)',
+                  applicationLegalese:
+                      'Copyright © 2026 Gaurav Studios. Documents stay local '
+                      'unless you choose to share them.',
+                  children: const [
+                    SizedBox(height: 12),
+                    Text(
+                      'Cross-platform PDF reading, editing, forms, page tools, '
+                      'scanning, private OCR, and guarded on-device form intelligence.',
                     ),
                   ],
                 ),
-              ],
-            ),
-          if (_busy)
-            ColoredBox(
-              color: const Color(0x66000000),
-              child: Center(
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const CircularProgressIndicator(),
-                        if (_busyMessage != null) ...[
-                          const SizedBox(height: 16),
-                          Text(_busyMessage!),
-                        ],
-                      ],
+                icon: const Icon(Icons.info_outline),
+              ),
+              const SizedBox(width: 8),
+            ],
+            bottom:
+                MediaQuery.sizeOf(context).width >= 700 && _sessions.length > 1
+                ? PreferredSize(
+                    preferredSize: const Size.fromHeight(46),
+                    child: _DocumentTabStrip(
+                      sessions: _sessions,
+                      activeIndex: _activeSessionIndex,
+                      onSelected: _switchToSession,
+                      onClosed: (index) => unawaited(_closeSession(index)),
+                    ),
+                  )
+                : null,
+          ),
+          body: Stack(
+            children: [
+              if (document == null)
+                _EmptyState(
+                  onOpen: _busy ? null : _openDocument,
+                  onFillAndSign: _busy
+                      ? null
+                      : () => _openDocument(startTool: PdfEditTool.select),
+                  onCreateFromImages: _busy ? null : _createFromImages,
+                  onMergePdfs: _busy ? null : _mergePdfs,
+                  onScanDocument: _busy || !isDocumentScannerSupported
+                      ? null
+                      : _scanDocument,
+                  recentDocuments: _recentDocuments,
+                  onOpenRecent: _busy ? null : _openRecent,
+                )
+              else
+                PdfEditorView(
+                  key: ValueKey(
+                    '${document.source.id}-${identityHashCode(_editingController)}',
+                  ),
+                  controller: _editingController,
+                  documentId: document.source.id,
+                  features: PdfEditorFeatures(tools: _qpdfEditorTools),
+                  onSave: (bytes) => unawaited(_save(bytes)),
+                  onSaveAs: (bytes) => unawaited(_saveAs(bytes)),
+                  showSaveButton: false,
+                  onDocumentChanged: (bytes) {
+                    final recoveryBase = _recoveryBaseSource;
+                    if (recoveryBase != null) {
+                      widget.recoveryService.schedule(recoveryBase, bytes);
+                    }
+                    if (!_modified && mounted) setState(() => _modified = true);
+                  },
+                  onPickPdfToInsert: _pickBytes,
+                  onExportPages: _saveExportedPages,
+                  toolbarLeading: [
+                    (context, editing, viewer) => FilledButton.icon(
+                      key: const Key('fill-and-sign-toolbar-button'),
+                      onPressed: () => unawaited(_showFillAndSign(editing)),
+                      icon: const Icon(Icons.draw_outlined),
+                      label: const Text('Fill & Sign'),
+                    ),
+                  ],
+                  toolbarTrailing: [
+                    (context, editing, viewer) => FilledButton.icon(
+                      onPressed: _modified
+                          ? () => unawaited(_save(editing.bytes))
+                          : null,
+                      icon: const Icon(Icons.save_alt),
+                      label: const Text('Save'),
+                    ),
+                  ],
+                ),
+              if (_busy)
+                ColoredBox(
+                  color: const Color(0x66000000),
+                  child: Center(
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(),
+                            if (_busyMessage != null) ...[
+                              const SizedBox(height: 16),
+                              Text(_busyMessage!),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-        ],
+            ],
           ),
         ),
       ),
@@ -2291,9 +2385,112 @@ class _EditorHomeState extends State<EditorHome> {
 
   @override
   void dispose() {
-    _editingController?.dispose();
+    for (final session in _sessions) {
+      session.controller.dispose();
+    }
     unawaited(widget.recoveryService.dispose());
     super.dispose();
+  }
+}
+
+final class _DocumentSession {
+  _DocumentSession({
+    required this.document,
+    required this.controller,
+    required this.password,
+    required this.recoveryBaseSource,
+  }) : modified = false;
+
+  PdfOpenedDocument document;
+  PdfEditingController controller;
+  String password;
+  PdfDocumentSource recoveryBaseSource;
+  bool modified;
+}
+
+class _DocumentTabStrip extends StatelessWidget {
+  const _DocumentTabStrip({
+    required this.sessions,
+    required this.activeIndex,
+    required this.onSelected,
+    required this.onClosed,
+  });
+
+  final List<_DocumentSession> sessions;
+  final int activeIndex;
+  final ValueChanged<int> onSelected;
+  final ValueChanged<int> onClosed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 46,
+      child: Material(
+        color: colors.surfaceContainerLow,
+        child: ListView.separated(
+          key: const Key('document-tab-strip'),
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          itemCount: sessions.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 4),
+          itemBuilder: (context, index) {
+            final session = sessions[index];
+            final selected = index == activeIndex;
+            return Material(
+              color: selected ? colors.surface : Colors.transparent,
+              borderRadius: BorderRadius.circular(9),
+              child: InkWell(
+                key: Key('document-tab-$index'),
+                borderRadius: BorderRadius.circular(9),
+                onTap: () => onSelected(index),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minWidth: 150,
+                    maxWidth: 260,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12, right: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.picture_as_pdf_outlined,
+                          size: 17,
+                          color: selected ? colors.primary : colors.outline,
+                        ),
+                        const SizedBox(width: 7),
+                        Flexible(
+                          child: Text(
+                            '${session.document.source.displayName}'
+                            '${session.modified ? ' *' : ''}',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: selected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          key: Key('close-document-tab-$index'),
+                          tooltip:
+                              'Close ${session.document.source.displayName}',
+                          visualDensity: VisualDensity.compact,
+                          iconSize: 16,
+                          onPressed: () => onClosed(index),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 
