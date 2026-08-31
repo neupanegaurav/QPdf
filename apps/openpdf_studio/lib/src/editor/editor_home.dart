@@ -18,6 +18,7 @@ import '../services/document_signature_service.dart';
 import '../services/document_stamp_service.dart';
 import '../services/images_to_pdf_service.dart';
 import '../services/offline_ocr_service.dart';
+import '../services/open_documents_session_service.dart';
 import '../services/pdf_merge_service.dart';
 import '../services/pdf_protection_service.dart';
 import '../services/pdf_rewrite_service.dart';
@@ -37,6 +38,7 @@ class EditorHome extends StatefulWidget {
     required this.fileService,
     required this.recoveryService,
     required this.recentDocumentsService,
+    required this.openDocumentsSessionService,
     this.initialDocument,
     super.key,
   });
@@ -45,6 +47,7 @@ class EditorHome extends StatefulWidget {
   final DocumentFileService fileService;
   final DocumentRecoveryService recoveryService;
   final RecentDocumentsService recentDocumentsService;
+  final OpenDocumentsSessionService openDocumentsSessionService;
   final PdfDocumentSource? initialDocument;
 
   @override
@@ -100,7 +103,66 @@ class _EditorHomeState extends State<EditorHome> {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => unawaited(_openProvidedDocument(initial)),
       );
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => unawaited(_restoreOpenDocuments()),
+      );
     }
+  }
+
+  Future<void> _restoreOpenDocuments() async {
+    final saved = await widget.openDocumentsSessionService.read();
+    if (!mounted || saved.documents.isEmpty || _sessions.isNotEmpty) return;
+    setState(() {
+      _busy = true;
+      _busyMessage = 'Restoring documents…';
+    });
+    try {
+      for (final item in saved.documents) {
+        final source = await widget.fileService.openRecent(
+          id: item.id,
+          displayName: item.displayName,
+          localPath: item.localPath,
+        );
+        if (source == null || !mounted) continue;
+        await _openSource(source, openInNewTab: true, persistSession: false);
+      }
+      if (!mounted) return;
+      final activeIndex = _sessions.indexWhere(
+        (session) => session.document.source.id == saved.activeDocumentId,
+      );
+      if (activeIndex >= 0) setState(() => _activeSessionIndex = activeIndex);
+      await _persistOpenDocuments();
+    } catch (error) {
+      _showError(error);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _busyMessage = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _persistOpenDocuments() {
+    final documents = _sessions
+        .map((session) => session.document.source)
+        .where((source) => source.localPath?.isNotEmpty ?? false)
+        .map(
+          (source) => OpenDocumentSessionEntry(
+            id: source.id,
+            displayName: source.displayName,
+            localPath: source.localPath!,
+          ),
+        )
+        .toList(growable: false);
+    return widget.openDocumentsSessionService.write(
+      OpenDocumentsSession(
+        documents: documents,
+        activeDocumentId: _activeSession?.document.source.id,
+      ),
+    );
   }
 
   @override
@@ -334,6 +396,7 @@ class _EditorHomeState extends State<EditorHome> {
     String password = '',
     bool openInNewTab = false,
     PdfDocumentSource? recoveryBaseSource,
+    bool persistSession = true,
   }) async {
     if (openInNewTab) {
       final existing = _sessions.indexWhere(
@@ -384,6 +447,7 @@ class _EditorHomeState extends State<EditorHome> {
             ..modified = false;
         }
       });
+      if (persistSession) await _persistOpenDocuments();
       return true;
     } on PdfPasswordRequiredException {
       if (!mounted) return false;
@@ -394,6 +458,7 @@ class _EditorHomeState extends State<EditorHome> {
           password: entered,
           openInNewTab: openInNewTab,
           recoveryBaseSource: recoveryBaseSource,
+          persistSession: persistSession,
         );
       }
       return false;
@@ -465,6 +530,7 @@ class _EditorHomeState extends State<EditorHome> {
         engine: document.engine,
       );
       setState(() => _modified = false);
+      await _persistOpenDocuments();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Saved to $path')));
@@ -554,11 +620,13 @@ class _EditorHomeState extends State<EditorHome> {
         _activeSessionIndex = _sessions.length - 1;
       }
     });
+    await _persistOpenDocuments();
   }
 
   void _switchToSession(int index) {
     if (_busy || index == _activeSessionIndex) return;
     setState(() => _activeSessionIndex = index);
+    unawaited(_persistOpenDocuments());
   }
 
   Future<void> _closeSession(int index) async {
@@ -581,6 +649,7 @@ class _EditorHomeState extends State<EditorHome> {
         _activeSessionIndex = adjustedPrevious.clamp(0, _sessions.length - 1);
       }
     });
+    await _persistOpenDocuments();
   }
 
   Future<void> _printDocument(Uint8List bytes) async {
@@ -2173,7 +2242,16 @@ class _EditorHomeState extends State<EditorHome> {
             titleSpacing: 20,
             title: Row(
               children: [
-                const Icon(Icons.picture_as_pdf_outlined),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(7),
+                  child: Image.asset(
+                    'assets/branding/qpdf-icon-master.png',
+                    width: 28,
+                    height: 28,
+                    fit: BoxFit.cover,
+                    semanticLabel: 'QPdf',
+                  ),
+                ),
                 const SizedBox(width: 10),
                 Flexible(
                   child: Text(
