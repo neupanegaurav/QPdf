@@ -30,8 +30,12 @@ echo "--- ci_post_clone: precaching iOS artifacts ---"
 flutter precache --ios 2>&1 || true
 
 echo "--- ci_post_clone: flutter pub get ---"
-# CI_WORKSPACE is the repository root set by Xcode Cloud.
-cd "$CI_WORKSPACE/apps/openpdf_studio"
+# $CI_WORKSPACE is unset in this Xcode Cloud environment (observed empty on
+# build 13, 2026-09-01, turning the cd into the bogus absolute path
+# "/apps/openpdf_studio"). Derive the Flutter project root from the script's
+# own location instead: ios/ci_scripts/ci_post_clone.sh -> ios -> project root.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/../.."
 flutter pub get
 
 echo "--- ci_post_clone: complete ---"
