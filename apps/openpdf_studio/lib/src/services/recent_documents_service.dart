@@ -9,18 +9,21 @@ final class RecentDocument {
     required this.displayName,
     required this.localPath,
     required this.openedAt,
+    this.pinned = false,
   });
 
   final String id;
   final String displayName;
   final String localPath;
   final DateTime openedAt;
+  final bool pinned;
 
   Map<String, Object> toJson() => {
     'id': id,
     'displayName': displayName,
     'localPath': localPath,
     'openedAt': openedAt.toUtc().toIso8601String(),
+    'pinned': pinned,
   };
 
   static RecentDocument? fromJson(Object? value) {
@@ -40,6 +43,7 @@ final class RecentDocument {
       displayName: name,
       localPath: path,
       openedAt: openedAt,
+      pinned: value['pinned'] == true,
     );
   }
 }
@@ -48,6 +52,7 @@ abstract interface class RecentDocumentsService {
   Future<List<RecentDocument>> list();
   Future<void> remember(PdfDocumentSource source);
   Future<void> remove(String id);
+  Future<void> setPinned(String id, bool pinned);
   Future<void> clear();
 }
 
@@ -79,21 +84,43 @@ final class PreferencesRecentDocumentsService
     final path = source.localPath;
     if (path == null || path.isEmpty) return;
     final current = await list();
+    final previous = current.where((item) => item.id == source.id).firstOrNull;
     final updated = <RecentDocument>[
       RecentDocument(
         id: source.id,
         displayName: source.displayName,
         localPath: path,
         openedAt: DateTime.now().toUtc(),
+        pinned: previous?.pinned ?? false,
       ),
       ...current.where((item) => item.id != source.id),
-    ].take(_maximumCount).toList(growable: false);
-    await _write(updated);
+    ]..sort(_compareRecentDocuments);
+    await _write(updated.take(_maximumCount).toList(growable: false));
   }
 
   @override
   Future<void> remove(String id) async {
     await _write((await list()).where((item) => item.id != id).toList());
+  }
+
+  @override
+  Future<void> setPinned(String id, bool pinned) async {
+    final updated = [
+      for (final item in await list())
+        RecentDocument(
+          id: item.id,
+          displayName: item.displayName,
+          localPath: item.localPath,
+          openedAt: item.openedAt,
+          pinned: item.id == id ? pinned : item.pinned,
+        ),
+    ]..sort(_compareRecentDocuments);
+    await _write(updated);
+  }
+
+  static int _compareRecentDocuments(RecentDocument a, RecentDocument b) {
+    if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
+    return b.openedAt.compareTo(a.openedAt);
   }
 
   @override
@@ -118,4 +145,6 @@ final class NoopRecentDocumentsService implements RecentDocumentsService {
   Future<void> remember(PdfDocumentSource source) async {}
   @override
   Future<void> remove(String id) async {}
+  @override
+  Future<void> setPinned(String id, bool pinned) async {}
 }

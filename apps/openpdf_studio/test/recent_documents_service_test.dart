@@ -31,6 +31,25 @@ void main() {
     expect(await service.list(), isEmpty);
   });
 
+  test('pinned documents stay above newer unpinned documents', () async {
+    final service = PreferencesRecentDocumentsService();
+    final first = _source('first', '/documents/first.pdf');
+    final second = _source('second', '/documents/second.pdf');
+    await service.remember(first);
+    await service.setPinned('first', true);
+    await service.remember(second);
+
+    var items = await service.list();
+    expect(items.map((item) => item.id), ['first', 'second']);
+    expect(items.first.pinned, isTrue);
+
+    await service.remember(first);
+    expect((await service.list()).first.pinned, isTrue);
+    await service.setPinned('first', false);
+    items = await service.list();
+    expect(items.first.pinned, isFalse);
+  });
+
   test(
     'caps history at twelve documents and removes missing entries',
     () async {

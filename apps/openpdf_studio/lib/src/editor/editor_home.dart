@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:dart_pdf_editor/dart_pdf_editor.dart';
+import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf_domain/pdf_domain.dart';
@@ -16,6 +18,7 @@ import '../services/document_scanner_service.dart';
 import '../services/document_security_service.dart';
 import '../services/document_signature_service.dart';
 import '../services/document_stamp_service.dart';
+import '../services/advanced_print_service.dart';
 import '../services/images_to_pdf_service.dart';
 import '../services/offline_ocr_service.dart';
 import '../services/open_documents_session_service.dart';
@@ -24,13 +27,21 @@ import '../services/pdf_protection_service.dart';
 import '../services/pdf_rewrite_service.dart';
 import '../services/pdf_external_modification_exception.dart';
 import '../services/recent_documents_service.dart';
+import '../services/reveal_local_file.dart';
 import '../services/secure_redaction_service.dart';
 import 'document_commands.dart';
+import 'document_desktop_menu_bar.dart';
+import 'document_edit_menu.dart';
+import 'document_mode_rail.dart';
 import 'document_tools_panel.dart';
 
 final _qpdfEditorTools = Set<PdfEditTool>.unmodifiable(
   PdfEditTool.values.where((tool) => tool != PdfEditTool.redact),
 );
+
+enum _WorkspaceContextAction { select, edit, comment, fillAndSign, allTools }
+
+enum _RecentAction { pin, unpin, reveal, remove }
 
 class EditorHome extends StatefulWidget {
   const EditorHome({
@@ -62,6 +73,7 @@ class _EditorHomeState extends State<EditorHome> {
   bool _busy = false;
   String? _busyMessage;
   List<RecentDocument> _recentDocuments = const [];
+  bool _draggingFiles = false;
 
   _DocumentSession? get _activeSession =>
       _activeSessionIndex >= 0 && _activeSessionIndex < _sessions.length
@@ -201,6 +213,64 @@ class _EditorHomeState extends State<EditorHome> {
     }
   }
 
+  Future<void> _openDroppedFiles(DropDoneDetails details) async {
+    if (mounted) setState(() => _draggingFiles = false);
+    final pdfs = details.files
+        .where((item) => item.name.toLowerCase().endsWith('.pdf'))
+        .take(_maximumOpenDocuments - _sessions.length)
+        .toList(growable: false);
+    if (pdfs.isEmpty) {
+      _showError(StateError('Drop one or more PDF files to open them.'));
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _busyMessage = pdfs.length == 1
+          ? 'Opening dropped PDF…'
+          : 'Opening ${pdfs.length} dropped PDFs…';
+    });
+    try {
+      for (final item in pdfs) {
+        final bookmark = item.extraAppleBookmark;
+        if (bookmark != null && bookmark.isNotEmpty) {
+          await DesktopDrop.instance.startAccessingSecurityScopedResource(
+            bookmark: bookmark,
+          );
+        }
+        final bytes = await item.readAsBytes();
+        if (bytes.length < 5 ||
+            String.fromCharCodes(bytes.take(5)) != '%PDF-') {
+          throw StateError('${item.name} is not a valid PDF file.');
+        }
+        final path = item.fromPromise || item.path.isEmpty ? null : item.path;
+        final source = PdfDocumentSource(
+          id: path ?? 'drop:${item.name}:${bytes.length}',
+          displayName: item.name,
+          bytes: bytes,
+          localPath: path,
+        );
+        if (!mounted) return;
+        if (await _openSource(
+          source,
+          openInNewTab: true,
+          recoveryBaseSource: source,
+        )) {
+          await widget.recentDocumentsService.remember(source);
+        }
+      }
+      await _loadRecentDocuments();
+    } catch (error) {
+      _showError(error);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _busyMessage = null;
+        });
+      }
+    }
+  }
+
   Future<void> _loadRecentDocuments() async {
     final recent = await widget.recentDocumentsService.list();
     if (mounted) setState(() => _recentDocuments = recent);
@@ -258,6 +328,29 @@ class _EditorHomeState extends State<EditorHome> {
       _showError(error);
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _handleRecentAction(
+    RecentDocument recent,
+    _RecentAction action,
+  ) async {
+    try {
+      switch (action) {
+        case _RecentAction.pin:
+          await widget.recentDocumentsService.setPinned(recent.id, true);
+        case _RecentAction.unpin:
+          await widget.recentDocumentsService.setPinned(recent.id, false);
+        case _RecentAction.reveal:
+          if (!await revealLocalFile(recent.localPath)) {
+            throw StateError('The containing folder could not be opened.');
+          }
+        case _RecentAction.remove:
+          await widget.recentDocumentsService.remove(recent.id);
+      }
+      if (action != _RecentAction.reveal) await _loadRecentDocuments();
+    } catch (error) {
+      _showError(error);
     }
   }
 
@@ -531,6 +624,7 @@ class _EditorHomeState extends State<EditorHome> {
       );
       setState(() => _modified = false);
       await _persistOpenDocuments();
+      if (!mounted) return false;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Saved to $path')));
@@ -614,6 +708,7 @@ class _EditorHomeState extends State<EditorHome> {
     setState(() {
       final removed = _sessions.removeAt(_activeSessionIndex);
       removed.controller.dispose();
+      removed.viewerController.dispose();
       if (_sessions.isEmpty) {
         _activeSessionIndex = -1;
       } else if (_activeSessionIndex >= _sessions.length) {
@@ -642,6 +737,7 @@ class _EditorHomeState extends State<EditorHome> {
     setState(() {
       final removed = _sessions.removeAt(index);
       removed.controller.dispose();
+      removed.viewerController.dispose();
       if (_sessions.isEmpty) {
         _activeSessionIndex = -1;
       } else {
@@ -653,13 +749,93 @@ class _EditorHomeState extends State<EditorHome> {
   }
 
   Future<void> _printDocument(Uint8List bytes) async {
+    final selection = await _showPrintOptions();
+    if (selection == null || !mounted) return;
     try {
+      final printable = buildPrintSelection(bytes, selection);
       await Printing.layoutPdf(
         name: _document?.source.displayName ?? 'QPdf document',
-        onLayout: (_) async => bytes,
+        onLayout: (_) async => printable,
       );
     } catch (error) {
       _showError(error);
+    }
+  }
+
+  Future<PdfPrintSelection?> _showPrintOptions() async {
+    final range = TextEditingController();
+    var subset = PdfPrintSubset.all;
+    try {
+      return await showDialog<PdfPrintSelection>(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Print'),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    key: const Key('print-page-range'),
+                    controller: range,
+                    decoration: const InputDecoration(
+                      labelText: 'Pages',
+                      hintText: 'All pages, or 1-3, 5, 8-10',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<PdfPrintSubset>(
+                    key: const Key('print-page-subset'),
+                    initialValue: subset,
+                    decoration: const InputDecoration(labelText: 'Subset'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: PdfPrintSubset.all,
+                        child: Text('All selected pages'),
+                      ),
+                      DropdownMenuItem(
+                        value: PdfPrintSubset.odd,
+                        child: Text('Odd pages only'),
+                      ),
+                      DropdownMenuItem(
+                        value: PdfPrintSubset.even,
+                        child: Text('Even pages only'),
+                      ),
+                    ],
+                    onChanged: (value) => setDialogState(
+                      () => subset = value ?? PdfPrintSubset.all,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Paper size, orientation, scaling, duplex, grayscale, '
+                    'pages per sheet, booklet, and poster options are provided '
+                    'by your system print panel where supported.',
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                key: const Key('print-continue'),
+                onPressed: () => Navigator.pop(
+                  context,
+                  PdfPrintSelection(range: range.text, subset: subset),
+                ),
+                child: const Text('Continue'),
+              ),
+            ],
+          ),
+        ),
+      );
+    } finally {
+      range.dispose();
     }
   }
 
@@ -2112,6 +2288,18 @@ class _EditorHomeState extends State<EditorHome> {
     unawaited(_showDocumentTools(editing));
   }
 
+  void _undoShortcut() {
+    final editing = _editingController;
+    if (_busy || editing == null || !editing.canUndo) return;
+    editing.undo();
+  }
+
+  void _redoShortcut() {
+    final editing = _editingController;
+    if (_busy || editing == null || !editing.canRedo) return;
+    editing.redo();
+  }
+
   void _closeTabShortcut() {
     if (_busy || _activeSession == null) return;
     unawaited(_closeDocument());
@@ -2188,6 +2376,239 @@ class _EditorHomeState extends State<EditorHome> {
     );
   }
 
+  Future<void> _showEditMenu(PdfEditingController editing) async {
+    if (MediaQuery.sizeOf(context).width < 900) {
+      await _showDocumentTools(editing);
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black38,
+      builder: (dialogContext) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 56),
+        child: DocumentEditMenu(
+          onToolSelected: (tool) => editing.tool = tool,
+          onCommandSelected: (command) => _runDocumentCommand(command, editing),
+          onFillAndSign: () => unawaited(_showFillAndSign(editing)),
+          onAllTools: () => unawaited(_showDocumentTools(editing)),
+        ),
+      ),
+    );
+  }
+
+  void _selectWorkspaceMode(
+    DocumentWorkspaceMode mode,
+    PdfEditingController editing,
+  ) {
+    final session = _activeSession;
+    if (session == null) return;
+    setState(() => session.workspaceMode = mode);
+    switch (mode) {
+      case DocumentWorkspaceMode.read:
+        editing.tool = PdfEditTool.select;
+      case DocumentWorkspaceMode.edit:
+        editing.tool = PdfEditTool.content;
+      case DocumentWorkspaceMode.comment:
+        editing.tool = PdfEditTool.note;
+      case DocumentWorkspaceMode.fillAndSign:
+        unawaited(_showFillAndSign(editing));
+      case DocumentWorkspaceMode.organize:
+        unawaited(_showDocumentTools(editing));
+      case DocumentWorkspaceMode.convert:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Document conversion is not available in this release yet.',
+            ),
+          ),
+        );
+      case DocumentWorkspaceMode.protect:
+        unawaited(_showSecurityReport(editing));
+    }
+  }
+
+  Widget _buildDocumentWorkspace(
+    BuildContext context,
+    PdfOpenedDocument document,
+    PdfEditingController editing,
+    bool showFullToolbarActions,
+  ) {
+    final editor = PdfEditorView(
+      key: ValueKey(
+        '${document.source.id}-${identityHashCode(editing)}-'
+        '${_activeSession?.viewerGeneration}',
+      ),
+      controller: editing,
+      viewerController: _activeSession?.viewerController,
+      documentId: document.source.id,
+      features: PdfEditorFeatures(tools: _qpdfEditorTools),
+      initialFit: _activeSession?.viewerFit ?? PdfViewerFit.page,
+      pageLayout:
+          _activeSession?.pageLayout ??
+          const PdfPageLayout.verticalContinuous(),
+      onSave: (bytes) => unawaited(_save(bytes)),
+      onSaveAs: (bytes) => unawaited(_saveAs(bytes)),
+      showSaveButton: false,
+      onDocumentChanged: (bytes) {
+        final recoveryBase = _recoveryBaseSource;
+        if (recoveryBase != null) {
+          widget.recoveryService.schedule(recoveryBase, bytes);
+        }
+        if (!_modified && mounted) setState(() => _modified = true);
+      },
+      onPickPdfToInsert: _pickBytes,
+      onExportPages: _saveExportedPages,
+      toolbarLeading: showFullToolbarActions
+          ? [
+              (context, editing, viewer) => FilledButton.icon(
+                key: const Key('fill-and-sign-toolbar-button'),
+                onPressed: () => unawaited(_showFillAndSign(editing)),
+                icon: const Icon(Icons.draw_outlined),
+                label: const Text('Fill & Sign'),
+              ),
+            ]
+          : const [],
+      toolbarTrailing: showFullToolbarActions
+          ? [
+              (context, editing, viewer) => FilledButton.icon(
+                onPressed: _modified
+                    ? () => unawaited(_save(editing.bytes))
+                    : null,
+                icon: const Icon(Icons.save_alt),
+                label: const Text('Save'),
+              ),
+            ]
+          : const [],
+    );
+    final selected =
+        _activeSession?.workspaceMode ?? DocumentWorkspaceMode.read;
+    final workspace = LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 900) {
+          return Row(
+            children: [
+              DocumentModeRail(
+                selected: selected,
+                horizontal: false,
+                onSelected: (mode) => _selectWorkspaceMode(mode, editing),
+              ),
+              const VerticalDivider(width: 1),
+              Expanded(child: editor),
+            ],
+          );
+        }
+        return Column(
+          children: [
+            Expanded(child: editor),
+            const Divider(height: 1),
+            DocumentModeRail(
+              selected: selected,
+              horizontal: true,
+              onSelected: (mode) => _selectWorkspaceMode(mode, editing),
+            ),
+          ],
+        );
+      },
+    );
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (event) {
+        if (event.buttons & kSecondaryMouseButton != 0) {
+          unawaited(_showWorkspaceContextMenu(editing, event.position));
+        }
+      },
+      child: workspace,
+    );
+  }
+
+  Future<void> _showWorkspaceContextMenu(
+    PdfEditingController editing,
+    Offset globalPosition,
+  ) async {
+    final overlay = Overlay.of(context).context.findRenderObject();
+    if (overlay is! RenderBox) return;
+    final action = await showMenu<_WorkspaceContextAction>(
+      context: context,
+      position: RelativeRect.fromRect(
+        Rect.fromLTWH(globalPosition.dx, globalPosition.dy, 1, 1),
+        Offset.zero & overlay.size,
+      ),
+      items: const [
+        PopupMenuItem(
+          key: Key('workspace-context-select'),
+          value: _WorkspaceContextAction.select,
+          child: ListTile(
+            leading: Icon(Icons.near_me_outlined),
+            title: Text('Select'),
+          ),
+        ),
+        PopupMenuItem(
+          key: Key('workspace-context-edit'),
+          value: _WorkspaceContextAction.edit,
+          child: ListTile(
+            leading: Icon(Icons.edit_outlined),
+            title: Text('Edit text or image'),
+          ),
+        ),
+        PopupMenuItem(
+          key: Key('workspace-context-comment'),
+          value: _WorkspaceContextAction.comment,
+          child: ListTile(
+            leading: Icon(Icons.comment_outlined),
+            title: Text('Add comment'),
+          ),
+        ),
+        PopupMenuItem(
+          value: _WorkspaceContextAction.fillAndSign,
+          child: ListTile(
+            leading: Icon(Icons.draw_outlined),
+            title: Text('Fill & Sign'),
+          ),
+        ),
+        PopupMenuItem(
+          value: _WorkspaceContextAction.allTools,
+          child: ListTile(
+            leading: Icon(Icons.apps_outlined),
+            title: Text('All tools…'),
+          ),
+        ),
+      ],
+    );
+    if (!mounted || action == null) return;
+    switch (action) {
+      case _WorkspaceContextAction.select:
+        _selectWorkspaceMode(DocumentWorkspaceMode.read, editing);
+      case _WorkspaceContextAction.edit:
+        _selectWorkspaceMode(DocumentWorkspaceMode.edit, editing);
+      case _WorkspaceContextAction.comment:
+        _selectWorkspaceMode(DocumentWorkspaceMode.comment, editing);
+      case _WorkspaceContextAction.fillAndSign:
+        _selectWorkspaceMode(DocumentWorkspaceMode.fillAndSign, editing);
+      case _WorkspaceContextAction.allTools:
+        unawaited(_showDocumentTools(editing));
+    }
+  }
+
+  void _setViewerFit(PdfViewerFit fit) {
+    final session = _activeSession;
+    if (session == null || session.viewerFit == fit) return;
+    setState(() {
+      session
+        ..viewerFit = fit
+        ..viewerGeneration = session.viewerGeneration + 1;
+    });
+  }
+
+  void _setPageLayout(PdfPageLayout layout) {
+    final session = _activeSession;
+    if (session == null || session.pageLayout == layout) return;
+    setState(() {
+      session
+        ..pageLayout = layout
+        ..viewerGeneration = session.viewerGeneration + 1;
+    });
+  }
+
   /// Desktop accelerators. Each action is bound under both Control (Windows and
   /// Linux) and Meta/Command (macOS). Modifier combinations never carry text,
   /// so a focused text field still receives normal typing.
@@ -2208,6 +2629,8 @@ class _EditorHomeState extends State<EditorHome> {
     bind(LogicalKeyboardKey.keyP, _printShortcut);
     bind(LogicalKeyboardKey.keyK, _allToolsShortcut);
     bind(LogicalKeyboardKey.keyW, _closeTabShortcut);
+    bind(LogicalKeyboardKey.keyZ, _undoShortcut);
+    bind(LogicalKeyboardKey.keyZ, _redoShortcut, shift: true);
     bindings[const SingleActivator(
       LogicalKeyboardKey.tab,
       control: true,
@@ -2237,203 +2660,304 @@ class _EditorHomeState extends State<EditorHome> {
       bindings: _buildShortcutBindings(),
       child: Focus(
         autofocus: true,
-        child: Scaffold(
-          appBar: AppBar(
-            titleSpacing: 20,
-            title: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(7),
-                  child: Image.asset(
-                    'assets/branding/qpdf-icon-master.png',
-                    width: 28,
-                    height: 28,
-                    fit: BoxFit.cover,
-                    semanticLabel: 'QPdf',
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Text(
-                    document == null
-                        ? 'QPdf'
-                        : '${document.source.displayName}${_modified ? ' *' : ''}',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              if (document != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Center(
-                    child: Text(
-                      '${document.summary.pageCount} pages  •  PDF ${document.summary.pdfVersion}',
-                      style: Theme.of(context).textTheme.labelMedium,
+        child: LayoutBuilder(
+          builder: (context, appConstraints) {
+            final windowWidth = appConstraints.maxWidth;
+            return Scaffold(
+              appBar: AppBar(
+                titleSpacing: 20,
+                title: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(7),
+                      child: Image.asset(
+                        'assets/branding/qpdf-icon-master.png',
+                        width: 28,
+                        height: 28,
+                        fit: BoxFit.cover,
+                        semanticLabel: 'QPdf',
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        document == null
+                            ? 'QPdf'
+                            : '${document.source.displayName}${_modified ? ' *' : ''}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-              if (document != null)
-                IconButton(
-                  key: const Key('close-document-button'),
-                  tooltip: 'Close document',
-                  onPressed: _busy ? null : _closeDocument,
-                  icon: const Icon(Icons.close),
-                ),
-              if (_editingController case final editing?)
-                ListenableBuilder(
-                  listenable: editing,
-                  builder: (context, _) => Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        key: const Key('secure-redaction-tool-button'),
-                        tooltip: 'Mark secure redaction',
+                actions: [
+                  if (document != null && windowWidth >= 700)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Center(
+                        child: Text(
+                          '${document.summary.pageCount} pages  •  PDF ${document.summary.pdfVersion}',
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                      ),
+                    ),
+                  if (document != null)
+                    IconButton(
+                      key: const Key('close-document-button'),
+                      tooltip: 'Close document',
+                      onPressed: _busy ? null : _closeDocument,
+                      icon: const Icon(Icons.close),
+                    ),
+                  if (windowWidth >= 900)
+                    if (_editingController case final editing?)
+                      TextButton.icon(
+                        key: const Key('edit-pdf-menu-button'),
                         onPressed: _busy
                             ? null
-                            : () => editing.tool = PdfEditTool.redact,
-                        icon: const Icon(Icons.gradient),
+                            : () => unawaited(_showEditMenu(editing)),
+                        icon: const Icon(Icons.edit_outlined, size: 20),
+                        label: const Text('Edit'),
                       ),
-                      if (editing.hasRedactionMarks)
-                        IconButton.filledTonal(
-                          key: const Key('secure-redaction-apply-button'),
-                          tooltip: 'Apply secure redactions',
-                          onPressed: _busy
-                              ? null
-                              : () =>
-                                    unawaited(_applySecureRedactions(editing)),
-                          icon: const Icon(Icons.security),
-                        ),
-                    ],
-                  ),
-                ),
-              if (_editingController case final editing?)
-                IconButton(
-                  key: const Key('document-tools-button'),
-                  tooltip: 'All tools (⌘/Ctrl+K)',
-                  onPressed: _busy
-                      ? null
-                      : () => unawaited(_showDocumentTools(editing)),
-                  icon: const Icon(Icons.apps_outlined),
-                ),
-              IconButton(
-                key: const Key('open-pdf-button'),
-                tooltip: 'Open PDF',
-                onPressed: _busy ? null : _openDocument,
-                icon: const Icon(Icons.folder_open_outlined),
-              ),
-              IconButton(
-                tooltip: 'About QPdf',
-                onPressed: () => showAboutDialog(
-                  context: context,
-                  applicationName: 'QPdf',
-                  applicationVersion: '0.1.0 (1)',
-                  applicationLegalese:
-                      'Copyright © 2026 Gaurav Studios. Documents stay local '
-                      'unless you choose to share them.',
-                  children: const [
-                    SizedBox(height: 12),
-                    Text(
-                      'Cross-platform PDF reading, editing, forms, page tools, '
-                      'scanning, private OCR, and guarded on-device form intelligence.',
-                    ),
-                  ],
-                ),
-                icon: const Icon(Icons.info_outline),
-              ),
-              const SizedBox(width: 8),
-            ],
-            bottom:
-                MediaQuery.sizeOf(context).width >= 700 && _sessions.length > 1
-                ? PreferredSize(
-                    preferredSize: const Size.fromHeight(46),
-                    child: _DocumentTabStrip(
-                      sessions: _sessions,
-                      activeIndex: _activeSessionIndex,
-                      onSelected: _switchToSession,
-                      onClosed: (index) => unawaited(_closeSession(index)),
-                    ),
-                  )
-                : null,
-          ),
-          body: Stack(
-            children: [
-              if (document == null)
-                _EmptyState(
-                  onOpen: _busy ? null : _openDocument,
-                  onFillAndSign: _busy
-                      ? null
-                      : () => _openDocument(startTool: PdfEditTool.select),
-                  onCreateFromImages: _busy ? null : _createFromImages,
-                  onMergePdfs: _busy ? null : _mergePdfs,
-                  onScanDocument: _busy || !isDocumentScannerSupported
-                      ? null
-                      : _scanDocument,
-                  recentDocuments: _recentDocuments,
-                  onOpenRecent: _busy ? null : _openRecent,
-                )
-              else
-                PdfEditorView(
-                  key: ValueKey(
-                    '${document.source.id}-${identityHashCode(_editingController)}',
-                  ),
-                  controller: _editingController,
-                  documentId: document.source.id,
-                  features: PdfEditorFeatures(tools: _qpdfEditorTools),
-                  onSave: (bytes) => unawaited(_save(bytes)),
-                  onSaveAs: (bytes) => unawaited(_saveAs(bytes)),
-                  showSaveButton: false,
-                  onDocumentChanged: (bytes) {
-                    final recoveryBase = _recoveryBaseSource;
-                    if (recoveryBase != null) {
-                      widget.recoveryService.schedule(recoveryBase, bytes);
-                    }
-                    if (!_modified && mounted) setState(() => _modified = true);
-                  },
-                  onPickPdfToInsert: _pickBytes,
-                  onExportPages: _saveExportedPages,
-                  toolbarLeading: [
-                    (context, editing, viewer) => FilledButton.icon(
-                      key: const Key('fill-and-sign-toolbar-button'),
-                      onPressed: () => unawaited(_showFillAndSign(editing)),
-                      icon: const Icon(Icons.draw_outlined),
-                      label: const Text('Fill & Sign'),
-                    ),
-                  ],
-                  toolbarTrailing: [
-                    (context, editing, viewer) => FilledButton.icon(
-                      onPressed: _modified
-                          ? () => unawaited(_save(editing.bytes))
-                          : null,
-                      icon: const Icon(Icons.save_alt),
-                      label: const Text('Save'),
-                    ),
-                  ],
-                ),
-              if (_busy)
-                ColoredBox(
-                  color: const Color(0x66000000),
-                  child: Center(
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
+                  if (windowWidth >= 700)
+                    if (_editingController case final editing?)
+                      ListenableBuilder(
+                        listenable: editing,
+                        builder: (context, _) => Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const CircularProgressIndicator(),
-                            if (_busyMessage != null) ...[
-                              const SizedBox(height: 16),
-                              Text(_busyMessage!),
-                            ],
+                            IconButton(
+                              key: const Key('secure-redaction-tool-button'),
+                              tooltip: 'Mark secure redaction',
+                              onPressed: _busy
+                                  ? null
+                                  : () => editing.tool = PdfEditTool.redact,
+                              icon: const Icon(Icons.gradient),
+                            ),
+                            if (editing.hasRedactionMarks)
+                              IconButton.filledTonal(
+                                key: const Key('secure-redaction-apply-button'),
+                                tooltip: 'Apply secure redactions',
+                                onPressed: _busy
+                                    ? null
+                                    : () => unawaited(
+                                        _applySecureRedactions(editing),
+                                      ),
+                                icon: const Icon(Icons.security),
+                              ),
                           ],
                         ),
                       ),
+                  if (_editingController case final editing?)
+                    IconButton(
+                      key: const Key('document-tools-button'),
+                      tooltip: 'All tools (⌘/Ctrl+K)',
+                      onPressed: _busy
+                          ? null
+                          : () => unawaited(_showDocumentTools(editing)),
+                      icon: const Icon(Icons.apps_outlined),
                     ),
-                  ),
+                  if (windowWidth < 700)
+                    if (_editingController case final editing?)
+                      IconButton(
+                        key: const Key('mobile-save-button'),
+                        tooltip: 'Save',
+                        onPressed: _busy || !_modified
+                            ? null
+                            : () => unawaited(_save(editing.bytes)),
+                        icon: const Icon(Icons.save_alt),
+                      ),
+                  if (windowWidth >= 700)
+                    IconButton(
+                      key: const Key('open-pdf-button'),
+                      tooltip: 'Open PDF',
+                      onPressed: _busy ? null : _openDocument,
+                      icon: const Icon(Icons.folder_open_outlined),
+                    ),
+                  if (windowWidth >= 700)
+                    IconButton(
+                      tooltip: 'About QPdf',
+                      onPressed: () => showAboutDialog(
+                        context: context,
+                        applicationName: 'QPdf',
+                        applicationVersion: '0.1.0 (1)',
+                        applicationLegalese:
+                            'Copyright © 2026 Gaurav Studios. Documents stay local '
+                            'unless you choose to share them.',
+                        children: const [
+                          SizedBox(height: 12),
+                          Text(
+                            'Cross-platform PDF reading, editing, forms, page tools, '
+                            'scanning, private OCR, and guarded on-device form intelligence.',
+                          ),
+                        ],
+                      ),
+                      icon: const Icon(Icons.info_outline),
+                    ),
+                  const SizedBox(width: 8),
+                ],
+                bottom: windowWidth >= 700 && _sessions.length > 1
+                    ? PreferredSize(
+                        preferredSize: const Size.fromHeight(46),
+                        child: _DocumentTabStrip(
+                          sessions: _sessions,
+                          activeIndex: _activeSessionIndex,
+                          onSelected: _switchToSession,
+                          onClosed: (index) => unawaited(_closeSession(index)),
+                        ),
+                      )
+                    : null,
+              ),
+              body: DropTarget(
+                enable: !kIsWeb,
+                onDragEntered: (_) => setState(() => _draggingFiles = true),
+                onDragExited: (_) => setState(() => _draggingFiles = false),
+                onDragDone: (details) => unawaited(_openDroppedFiles(details)),
+                child: Stack(
+                  children: [
+                    Column(
+                      children: [
+                        if (windowWidth >= 900)
+                          if (_editingController case final editing?)
+                            ListenableBuilder(
+                              listenable: editing,
+                              builder: (context, _) => DocumentDesktopMenuBar(
+                                canUndo: editing.canUndo,
+                                canRedo: editing.canRedo,
+                                canSave: _modified,
+                                onOpen: _openShortcut,
+                                onSave: _saveShortcut,
+                                onSaveAs: _saveAsShortcut,
+                                onPrint: _printShortcut,
+                                onClose: _closeTabShortcut,
+                                onUndo: _undoShortcut,
+                                onRedo: _redoShortcut,
+                                onFitPage: () =>
+                                    _setViewerFit(PdfViewerFit.page),
+                                onFitWidth: () =>
+                                    _setViewerFit(PdfViewerFit.width),
+                                onActualSize:
+                                    _activeSession!.viewerController.resetZoom,
+                                onVerticalLayout: () => _setPageLayout(
+                                  const PdfPageLayout.verticalContinuous(),
+                                ),
+                                onHorizontalLayout: () => _setPageLayout(
+                                  const PdfPageLayout.horizontalContinuous(),
+                                ),
+                                onRotateLeft: () => _activeSession!
+                                    .viewerController
+                                    .rotateView(-90),
+                                onRotateRight: () => _activeSession!
+                                    .viewerController
+                                    .rotateView(90),
+                                onAllTools: _allToolsShortcut,
+                                onCommand: (command) =>
+                                    _runDocumentCommand(command, editing),
+                              ),
+                            ),
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              if (document == null)
+                                _EmptyState(
+                                  onOpen: _busy ? null : _openDocument,
+                                  onFillAndSign: _busy
+                                      ? null
+                                      : () => _openDocument(
+                                          startTool: PdfEditTool.select,
+                                        ),
+                                  onCreateFromImages: _busy
+                                      ? null
+                                      : _createFromImages,
+                                  onMergePdfs: _busy ? null : _mergePdfs,
+                                  onScanDocument:
+                                      _busy || !isDocumentScannerSupported
+                                      ? null
+                                      : _scanDocument,
+                                  recentDocuments: _recentDocuments,
+                                  onOpenRecent: _busy ? null : _openRecent,
+                                  onRecentAction: _busy
+                                      ? null
+                                      : (recent, action) => unawaited(
+                                          _handleRecentAction(recent, action),
+                                        ),
+                                )
+                              else
+                                _buildDocumentWorkspace(
+                                  context,
+                                  document,
+                                  _editingController!,
+                                  windowWidth >= 700,
+                                ),
+                              if (_busy)
+                                ColoredBox(
+                                  color: const Color(0x66000000),
+                                  child: Center(
+                                    child: Card(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(24),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const CircularProgressIndicator(),
+                                            if (_busyMessage != null) ...[
+                                              const SizedBox(height: 16),
+                                              Text(_busyMessage!),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_draggingFiles)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: ColoredBox(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.12),
+                            child: Center(
+                              child: Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 32,
+                                    vertical: 24,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.file_download_outlined,
+                                        size: 44,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      const Text(
+                                        'Drop PDFs to open',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-            ],
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -2465,6 +2989,7 @@ class _EditorHomeState extends State<EditorHome> {
   void dispose() {
     for (final session in _sessions) {
       session.controller.dispose();
+      session.viewerController.dispose();
     }
     unawaited(widget.recoveryService.dispose());
     super.dispose();
@@ -2477,13 +3002,23 @@ final class _DocumentSession {
     required this.controller,
     required this.password,
     required this.recoveryBaseSource,
-  }) : modified = false;
+  }) : modified = false,
+       workspaceMode = DocumentWorkspaceMode.read,
+       viewerController = PdfViewerController(),
+       viewerFit = PdfViewerFit.page,
+       pageLayout = const PdfPageLayout.verticalContinuous(),
+       viewerGeneration = 0;
 
   PdfOpenedDocument document;
   PdfEditingController controller;
   String password;
   PdfDocumentSource recoveryBaseSource;
   bool modified;
+  DocumentWorkspaceMode workspaceMode;
+  final PdfViewerController viewerController;
+  PdfViewerFit viewerFit;
+  PdfPageLayout pageLayout;
+  int viewerGeneration;
 }
 
 class _DocumentTabStrip extends StatelessWidget {
@@ -2581,6 +3116,7 @@ class _EmptyState extends StatelessWidget {
     required this.onScanDocument,
     required this.recentDocuments,
     required this.onOpenRecent,
+    required this.onRecentAction,
   });
 
   final VoidCallback? onOpen;
@@ -2590,6 +3126,7 @@ class _EmptyState extends StatelessWidget {
   final VoidCallback? onScanDocument;
   final List<RecentDocument> recentDocuments;
   final ValueChanged<RecentDocument>? onOpenRecent;
+  final void Function(RecentDocument, _RecentAction)? onRecentAction;
 
   @override
   Widget build(BuildContext context) {
@@ -2704,9 +3241,64 @@ class _EmptyState extends StatelessWidget {
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        trailing: Icon(
-                                          Icons.chevron_right,
-                                          color: colors.onSurfaceVariant,
+                                        trailing: PopupMenuButton<_RecentAction>(
+                                          key: Key(
+                                            'recent-menu-${recentDocuments[i].id}',
+                                          ),
+                                          tooltip: 'Recent document actions',
+                                          enabled: onRecentAction != null,
+                                          onSelected: (action) =>
+                                              onRecentAction?.call(
+                                                recentDocuments[i],
+                                                action,
+                                              ),
+                                          itemBuilder: (context) => [
+                                            PopupMenuItem(
+                                              value: recentDocuments[i].pinned
+                                                  ? _RecentAction.unpin
+                                                  : _RecentAction.pin,
+                                              child: ListTile(
+                                                leading: Icon(
+                                                  recentDocuments[i].pinned
+                                                      ? Icons.push_pin_outlined
+                                                      : Icons.push_pin,
+                                                ),
+                                                title: Text(
+                                                  recentDocuments[i].pinned
+                                                      ? 'Unpin'
+                                                      : 'Pin',
+                                                ),
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: _RecentAction.reveal,
+                                              child: ListTile(
+                                                leading: Icon(
+                                                  Icons.folder_open_outlined,
+                                                ),
+                                                title: Text('Show in folder'),
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: _RecentAction.remove,
+                                              child: ListTile(
+                                                leading: Icon(
+                                                  Icons.remove_circle_outline,
+                                                ),
+                                                title: Text(
+                                                  'Remove from recents',
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                          icon: Icon(
+                                            recentDocuments[i].pinned
+                                                ? Icons.push_pin
+                                                : Icons.more_horiz,
+                                            color: recentDocuments[i].pinned
+                                                ? colors.primary
+                                                : colors.onSurfaceVariant,
+                                          ),
                                         ),
                                         onTap: onOpenRecent == null
                                             ? null

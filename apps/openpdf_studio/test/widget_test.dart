@@ -1,13 +1,16 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:dart_pdf_editor/dart_pdf_editor.dart';
+import 'package:desktop_drop/desktop_drop.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:openpdf_studio/src/app.dart';
 import 'package:openpdf_studio/src/services/document_file_service.dart';
 import 'package:openpdf_studio/src/services/document_recovery_service.dart';
 import 'package:openpdf_studio/src/services/images_to_pdf_service.dart';
+import 'package:openpdf_studio/src/services/open_documents_session_service.dart';
 import 'package:pdf_document/pdf_document.dart';
 import 'package:pdf_domain/pdf_domain.dart';
 import 'package:pdf_engine_api/pdf_engine_api.dart';
@@ -119,7 +122,7 @@ void main() {
 
     expect(find.text('All tools'), findsOneWidget);
     expect(find.text('Output'), findsOneWidget);
-    expect(find.text('Protect'), findsOneWidget);
+    expect(find.text('Protect'), findsWidgets);
     expect(find.text('Make text searchable (OCR)'), findsOneWidget);
 
     await tester.enterText(
@@ -130,6 +133,125 @@ void main() {
 
     expect(find.text('Standards audit'), findsOneWidget);
     expect(find.text('Optimize PDF'), findsNothing);
+  });
+
+  testWidgets('adaptive workspace modes drive the editor tools', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1400, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final source = PdfDocumentSource(
+      id: 'workspace-modes',
+      displayName: 'Workspace.pdf',
+      bytes: PdfBlankDocument.create(),
+    );
+    await tester.pumpWidget(
+      QPdfApp(
+        engine: _FakeEngine(),
+        fileService: _FakeFileService(source),
+        recoveryService: const NoopDocumentRecoveryService(),
+      ),
+    );
+    await tester.tap(find.text('Open PDF'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byKey(const Key('document-mode-rail')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('document-mode-comment')));
+    await tester.pump();
+    expect(
+      tester.widget<PdfEditorView>(find.byType(PdfEditorView)).controller!.tool,
+      PdfEditTool.note,
+    );
+    await tester.tap(find.byKey(const Key('document-mode-edit')));
+    await tester.pump();
+    expect(
+      tester.widget<PdfEditorView>(find.byType(PdfEditorView)).controller!.tool,
+      PdfEditTool.content,
+    );
+  });
+
+  testWidgets('desktop menus and right click expose shared commands', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1400, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final source = PdfDocumentSource(
+      id: 'desktop-menus',
+      displayName: 'Menus.pdf',
+      bytes: PdfBlankDocument.create(),
+    );
+    await tester.pumpWidget(
+      QPdfApp(
+        engine: _FakeEngine(),
+        fileService: _FakeFileService(source),
+        recoveryService: const NoopDocumentRecoveryService(),
+      ),
+    );
+    await tester.tap(find.text('Open PDF'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byKey(const Key('document-desktop-menu-bar')), findsOneWidget);
+    await tester.tap(find.text('File'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('desktop-menu-open')), findsOneWidget);
+    expect(find.byKey(const Key('desktop-menu-save')), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('View'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('desktop-menu-horizontal-layout')));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<PdfEditorView>(find.byType(PdfEditorView)).pageLayout,
+      const PdfPageLayout.horizontalContinuous(),
+    );
+
+    final editorCenter = tester.getCenter(find.byType(PdfEditorView));
+    final mouse = await tester.createGesture(
+      kind: PointerDeviceKind.mouse,
+      buttons: kSecondaryMouseButton,
+    );
+    await mouse.down(editorCenter);
+    await mouse.up();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('workspace-context-comment')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('workspace-context-comment')));
+    await tester.pump();
+    expect(
+      tester.widget<PdfEditorView>(find.byType(PdfEditorView)).controller!.tool,
+      PdfEditTool.note,
+    );
+  });
+
+  testWidgets('phone workspace modes use a scrollable bottom bar', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final source = PdfDocumentSource(
+      id: 'phone-workspace-modes',
+      displayName: 'Phone.pdf',
+      bytes: PdfBlankDocument.create(),
+    );
+    await tester.pumpWidget(
+      QPdfApp(
+        engine: _FakeEngine(),
+        fileService: _FakeFileService(source),
+        recoveryService: const NoopDocumentRecoveryService(),
+      ),
+    );
+    await tester.tap(find.text('Open PDF'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byKey(const Key('document-mode-bar')), findsOneWidget);
+    expect(find.byKey(const Key('document-mode-rail')), findsNothing);
+    expect(find.byKey(const Key('edit-pdf-menu-button')), findsNothing);
+    expect(find.byKey(const Key('secure-redaction-tool-button')), findsNothing);
+    expect(find.byKey(const Key('open-pdf-button')), findsNothing);
   });
 
   testWidgets('desktop tabs keep independent document controllers', (
@@ -187,6 +309,93 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('document-tab-strip')), findsNothing);
     expect(find.text('First.pdf'), findsOneWidget);
+  });
+
+  testWidgets('dropping PDFs opens them as document tabs', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1400, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      QPdfApp(
+        engine: _FakeEngine(),
+        fileService: _FakeFileService(),
+        recoveryService: const NoopDocumentRecoveryService(),
+      ),
+    );
+
+    final bytes = PdfBlankDocument.create(pageCount: 2);
+    final target = tester.widget<DropTarget>(find.byType(DropTarget));
+    target.onDragDone!(
+      DropDoneDetails(
+        files: [
+          DropItemFile.fromData(
+            bytes,
+            name: 'Dropped.pdf',
+            path: '/documents/Dropped.pdf',
+          ),
+        ],
+        localPosition: Offset.zero,
+        globalPosition: Offset.zero,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 150));
+
+    expect(find.text('Dropped.pdf'), findsOneWidget);
+    expect(find.text('2 pages  •  PDF 1.7'), findsOneWidget);
+  });
+
+  testWidgets('restores saved document tabs and active tab after restart', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1400, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final first = PdfDocumentSource(
+      id: 'restored-first',
+      displayName: 'Restored First.pdf',
+      bytes: PdfBlankDocument.create(),
+      localPath: '/documents/first.pdf',
+    );
+    final second = PdfDocumentSource(
+      id: 'restored-second',
+      displayName: 'Restored Second.pdf',
+      bytes: PdfBlankDocument.create(pageCount: 2),
+      localPath: '/documents/second.pdf',
+    );
+    final sessionService = _MemoryOpenDocumentsSessionService(
+      const OpenDocumentsSession(
+        documents: [
+          OpenDocumentSessionEntry(
+            id: 'restored-first',
+            displayName: 'Restored First.pdf',
+            localPath: '/documents/first.pdf',
+          ),
+          OpenDocumentSessionEntry(
+            id: 'restored-second',
+            displayName: 'Restored Second.pdf',
+            localPath: '/documents/second.pdf',
+          ),
+        ],
+        activeDocumentId: 'restored-first',
+      ),
+    );
+    await tester.pumpWidget(
+      QPdfApp(
+        engine: _FakeEngine(),
+        fileService: _RestoringFileService({
+          '/documents/first.pdf': first,
+          '/documents/second.pdf': second,
+        }),
+        recoveryService: const NoopDocumentRecoveryService(),
+        openDocumentsSessionService: sessionService,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.byKey(const Key('document-tab-0')), findsOneWidget);
+    expect(find.byKey(const Key('document-tab-1')), findsOneWidget);
+    expect(find.text('Restored First.pdf'), findsWidgets);
+    expect(sessionService.value.activeDocumentId, 'restored-first');
   });
 
   testWidgets('Fill & Sign is prominent from home and inside the editor', (
@@ -489,7 +698,7 @@ final class _FakeRecoveryService implements DocumentRecoveryService {
   void schedule(PdfDocumentSource source, Uint8List revision) {}
 }
 
-final class _FakeFileService implements DocumentFileService {
+class _FakeFileService implements DocumentFileService {
   _FakeFileService([this.source, this.savePath]);
 
   PdfDocumentSource? source;
@@ -525,4 +734,35 @@ final class _FakeFileService implements DocumentFileService {
   @override
   Future<String?> savePdfAs(String suggestedName, Uint8List bytes) async =>
       null;
+}
+
+final class _RestoringFileService extends _FakeFileService {
+  _RestoringFileService(this.sources);
+
+  final Map<String, PdfDocumentSource> sources;
+
+  @override
+  Future<PdfDocumentSource?> openRecent({
+    required String id,
+    required String displayName,
+    required String localPath,
+  }) async => sources[localPath];
+}
+
+final class _MemoryOpenDocumentsSessionService
+    implements OpenDocumentsSessionService {
+  _MemoryOpenDocumentsSessionService(this.value);
+
+  OpenDocumentsSession value;
+
+  @override
+  Future<void> clear() async {
+    value = const OpenDocumentsSession(documents: [], activeDocumentId: null);
+  }
+
+  @override
+  Future<OpenDocumentsSession> read() async => value;
+
+  @override
+  Future<void> write(OpenDocumentsSession session) async => value = session;
 }

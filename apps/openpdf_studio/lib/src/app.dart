@@ -8,6 +8,7 @@ import '../l10n/app_localizations.dart';
 import 'editor/editor_home.dart';
 import 'services/document_file_service.dart';
 import 'services/document_recovery_service.dart';
+import 'services/open_documents_session_service.dart';
 import 'services/recent_documents_service.dart';
 import 'theme.dart';
 
@@ -17,6 +18,7 @@ class QPdfApp extends StatefulWidget {
     required this.fileService,
     required this.recoveryService,
     this.recentDocumentsService = const NoopRecentDocumentsService(),
+    this.openDocumentsSessionService = const NoopOpenDocumentsSessionService(),
     this.initialDocument,
     this.incomingDocuments = const Stream.empty(),
     super.key,
@@ -26,6 +28,7 @@ class QPdfApp extends StatefulWidget {
   final DocumentFileService fileService;
   final DocumentRecoveryService recoveryService;
   final RecentDocumentsService recentDocumentsService;
+  final OpenDocumentsSessionService openDocumentsSessionService;
   final PdfDocumentSource? initialDocument;
   final Stream<PdfDocumentSource> incomingDocuments;
 
@@ -85,6 +88,7 @@ class _QPdfAppState extends State<QPdfApp> {
         fileService: widget.fileService,
         recoveryService: widget.recoveryService,
         recentDocumentsService: widget.recentDocumentsService,
+        openDocumentsSessionService: widget.openDocumentsSessionService,
         initialDocument: _currentInitialDocument,
       ),
     );
