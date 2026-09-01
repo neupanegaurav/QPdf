@@ -38,4 +38,12 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/../.."
 flutter pub get
 
+echo "--- ci_post_clone: pod install ---"
+# Xcode Cloud calls xcodebuild directly, unlike `flutter build` which runs
+# `pod install` itself. Without this, the "[CP] Check Pods Manifest.lock"
+# build phase finds an unsynced sandbox and the Archive action fails
+# (observed on build 14, 2026-09-01).
+cd ios
+pod install
+
 echo "--- ci_post_clone: complete ---"
